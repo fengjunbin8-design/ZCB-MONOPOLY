@@ -2,1176 +2,943 @@
 <html lang="zh-HK">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>零碳大富翁 - 雙語自適應版 (ZCB Monopoly)</title>
-    <!-- 引入像素英文字体 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ZCB MONOPOLY | 零碳天地大富翁</title>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
     <style>
+        /* =================基础重置与变量================= */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
         :root {
-            --mc-orange: #f97316; /* CIC */
-            --mc-green: #22c55e;  /* NGO */
-            --mc-blue: #3b82f6;   /* PUB */
-            
-            --mc-panel-bg: #c6c6c6;
-            --mc-border-light: #ffffff;
-            --mc-border-dark: #555555;
-            --mc-border-black: #000000;
-            --mc-text-shadow: 2px 2px 0px rgba(0,0,0,0.7);
-            
-            --mc-grass: #5aa936;
-            --mc-dirt: #866043;
-            
-            /* 全局动态棋盘尺寸变量，确保不出现滚动条 */
-            --board-size: min(96vh, calc(100vw - 380px)); 
+            --bg-color: #7b5b3e; /* MC 泥土色 */
+            --board-bg: #407b22; /* MC 草地色 */
+            --tile-bg: #b0b0b0;
+            --text-main: #ffffff;
+            --text-dark: #000000;
+            --font-pixel: 'Press Start 2P', monospace;
+            --font-pixel-narrow: 'VT323', monospace;
+            --font-sans: 'Microsoft JhengHei', 'PingFang TC', sans-serif;
+            --board-size: min(90vh, calc(100vw - 420px)); /* 桌面端自适应 */
         }
-
-        * { 
-            box-sizing: border-box; 
-            margin: 0; 
-            padding: 0;
+        
+        body {
+            background-color: var(--bg-color);
+            background-image: 
+                linear-gradient(45deg, rgba(0,0,0,0.1) 25%, transparent 25%, transparent 75%, rgba(0,0,0,0.1) 75%, rgba(0,0,0,0.1)),
+                linear-gradient(45deg, rgba(0,0,0,0.1) 25%, transparent 25%, transparent 75%, rgba(0,0,0,0.1) 75%, rgba(0,0,0,0.1));
+            background-size: 40px 40px;
+            background-position: 0 0, 20px 20px;
+            font-family: var(--font-sans);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            color: var(--text-dark);
             user-select: none;
         }
 
-        body {
-            font-family: 'Press Start 2P', 'SimHei', 'Microsoft JhengHei', sans-serif;
-            background-color: var(--mc-dirt);
-            background-image: 
-                linear-gradient(45deg, #745138 25%, transparent 25%, transparent 75%, #745138 75%, #745138),
-                linear-gradient(45deg, #745138 25%, transparent 25%, transparent 75%, #745138 75%, #745138);
-            background-size: 40px 40px;
-            background-position: 0 0, 20px 20px;
+        #game-container {
             display: flex;
-            height: 100vh;
-            width: 100vw;
-            overflow: hidden; /* 锁死滚动条 */
-            image-rendering: pixelated;
+            gap: 20px;
+            max-width: 1400px;
+            width: 100%;
+            padding: 20px;
+            justify-content: center;
+            align-items: center;
         }
 
-        .mc-panel {
-            background-color: var(--mc-panel-bg);
-            border: 4px solid var(--mc-border-black);
-            box-shadow: inset 4px 4px 0px var(--mc-border-light), inset -4px -4px 0px var(--mc-border-dark);
-            color: #000;
+        /* =================左侧信息栏================= */
+        #left-panel {
+            width: 380px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            height: var(--board-size);
         }
 
-        .sidebar { 
-            width: 360px;
-            min-width: 320px;
-            padding: 15px; 
-            display: flex; 
-            flex-direction: column; 
-            gap: 12px; 
-            z-index: 10; 
-            height: 100vh;
+        .title-box {
+            background: #e0e0e0;
+            border: 4px solid #000;
+            padding: 15px;
+            text-align: center;
         }
-        
-        .header { text-align: center; padding: 15px 10px; margin-bottom: 5px; position: relative;}
-        .header h1 { font-size: 20px; color: #fff; text-shadow: var(--mc-text-shadow); line-height: 1.5;}
+        .title-box h1 {
+            font-family: var(--font-pixel);
+            font-size: 24px;
+            color: #fff;
+            text-shadow: 2px 2px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+        }
 
-        /* 语言切换按钮 - 整合至面板右上角 */
-        .lang-toggle {
-            width: 100%; margin-top: 10px;
-            padding: 6px 0; font-size: 14px; font-weight: bold; background: #ffea00; color: #000; 
-            border: 4px solid #000; box-shadow: inset 4px 4px 0 #fff, 4px 4px 0 rgba(0,0,0,0.5); 
-            cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 8px; 
-            font-family: 'Microsoft JhengHei', sans-serif; transition: 0.1s;
+        /* 语言切换按钮 */
+        #lang-btn {
+            background: #ffeb3b;
+            border: 3px solid #000;
+            padding: 8px;
+            font-family: var(--font-sans);
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            text-align: center;
+            font-size: 14px;
+            box-shadow: 3px 3px 0 #000;
         }
-        .lang-toggle:active { box-shadow: inset 4px 4px 0 rgba(0,0,0,0.2), 0 0 0 rgba(0,0,0,0); transform: translate(4px, 4px); }
+        #lang-btn:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 #000; }
 
         .player-card {
-            padding: 12px; position: relative; background-color: #8b8b8b;
-            border: 4px solid var(--mc-border-black); box-shadow: inset 4px 4px 0px #b0b0b0, inset -4px -4px 0px #555; transition: 0.2s;
-            height: 74px; display: flex; flex-direction: column; justify-content: center;
+            background: #b0b0b0;
+            border: 4px solid #000;
+            padding: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 74px; /* 固定高度防止语言切换时跳动 */
         }
-        .player-card.active { background-color: #c6c6c6; border-color: #ffff00; box-shadow: inset 4px 4px 0px #ffffff, inset -4px -4px 0px #888; transform: translateX(8px); }
-        .p-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;}
-        
-        /* 强制使用常规字体，防止中英文切换时卡片尺寸爆炸 */
-        .p-name, .p-target { font-family: 'Microsoft JhengHei', 'SimHei', sans-serif; }
-        
-        .p-name { font-size: 16px; font-weight: bold; text-shadow: 1px 1px 0 #fff; }
-        .player-card.active .p-name { text-shadow: none; }
-        .p-money { font-family: 'Press Start 2P', monospace; font-size: 15px; color: #ffff00; text-shadow: 2px 2px 0 #000; }
-        .p-target { font-size: 12px; color: #222; display: flex; justify-content: space-between; align-items: center;}
-        
-        .color-bar { position: absolute; left: -4px; top: -4px; bottom: -4px; width: 12px; border: 4px solid #000;}
-        .player-card[data-id="0"] .color-bar { background-color: var(--mc-orange); }
-        .player-card[data-id="1"] .color-bar { background-color: var(--mc-green); }
-        .player-card[data-id="2"] .color-bar { background-color: var(--mc-blue); }
-        .player-card[data-id="0"] .p-name { color: #9a3412; }
-        .player-card[data-id="1"] .p-name { color: #166534; }
-        .player-card[data-id="2"] .p-name { color: #1e40af; }
-        
-        .log-container {
-            flex-grow: 1; background-color: rgba(0, 0, 0, 0.75);
-            border: 2px solid #555; padding: 12px; overflow-y: auto;
-            color: #fff; font-family: 'Microsoft JhengHei', monospace; font-size: 13px; text-shadow: 1px 1px 0 #000;
-        }
-        .log-item { margin-bottom: 8px; line-height: 1.4; border-bottom: 1px dashed rgba(255,255,255,0.2); padding-bottom: 6px;}
+        .player-info { display: flex; flex-direction: column; gap: 5px; }
+        .p-name { font-family: var(--font-sans); font-size: 18px; font-weight: bold; }
+        .p-target { font-size: 12px; color: #444; font-family: var(--font-sans); }
+        .p-money { font-family: var(--font-pixel); font-size: 18px; color: #ffea00; text-shadow: 1px 1px 0 #000; }
 
-        .board-container { 
-            flex-grow: 1; 
-            height: 100vh;
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
+        .log-box {
+            background: #2b2b2b;
+            border: 4px solid #000;
+            flex-grow: 1;
             padding: 10px;
+            color: #ccc;
+            font-size: 12px;
+            overflow-y: auto;
+            font-family: var(--font-sans);
+            line-height: 1.5;
         }
-        
-        .board {
-            width: var(--board-size); 
+        .log-entry { margin-bottom: 5px; border-bottom: 1px dashed #444; padding-bottom: 5px; }
+
+        /* =================棋盘区域================= */
+        #board-wrapper {
+            position: relative;
+            width: var(--board-size);
             height: var(--board-size);
-            background-color: var(--mc-grass); 
-            border: 8px solid #386b20;
+            background: var(--board-bg);
+            border: 6px solid #5a8f29;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
             display: grid;
-            grid-template-columns: repeat(11, minmax(0, 1fr));
-            grid-template-rows: repeat(11, minmax(0, 1fr));
+            grid-template-columns: repeat(11, 1fr);
+            grid-template-rows: repeat(11, 1fr);
             gap: 2px;
             padding: 4px;
         }
-        
-        /* ================= 棋盘中心区域 ================= */
-        .board-center {
-            grid-column: 2 / 11; grid-row: 2 / 11;
-            background-color: rgba(0,0,0,0.35); border: 4px dashed #7ae647;
-            display: flex; flex-direction: column; justify-content: center; align-items: center;
-            margin: 4px; text-align: center; position: relative; gap: 2%;
-            min-width: 0; min-height: 0; 
-            overflow: hidden;
-            padding: 10px;
-        }
 
-        /* 动态排行榜 (Leaderboard) */
-        .leaderboard {
-            width: 90%;
-            background-color: rgba(0, 0, 0, 0.6);
-            border: 2px solid #555;
-            padding: clamp(5px, 1.5vh, 10px);
-            margin-bottom: clamp(10px, 3vh, 20px);
+        .tile {
+            background: var(--tile-bg);
+            border: 2px solid #000;
             display: flex;
             flex-direction: column;
+            justify-content: flex-end; /* 底部对齐，防溢出 */
             align-items: center;
-            gap: 8px;
-            box-shadow: inset 2px 2px 0 rgba(255,255,255,0.1), 4px 4px 0 rgba(0,0,0,0.5);
-        }
-        .lb-title {
-            font-family: 'Microsoft JhengHei', sans-serif;
-            font-size: clamp(10px, 1.5vh, 14px);
-            color: #ccc;
-            font-weight: bold;
-        }
-        .lb-stats {
-            display: flex;
-            justify-content: center;
-            align-items: flex-start;
-            gap: clamp(10px, 2vw, 20px);
-            width: 100%;
-        }
-        .lb-col {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            flex: 1;
-            min-width: 0;
-        }
-        .lb-item {
-            font-family: 'Press Start 2P', monospace;
-            font-size: clamp(12px, 2vh, 20px);
-            color: #fff;
-            display: flex;
-            align-items: baseline;
-            gap: 6px;
-            border-bottom: 3px solid;
-            padding-bottom: 2px;
-            margin-bottom: 6px;
-            text-shadow: 2px 2px 0 #000;
-        }
-        .lb-item span.role { font-size: clamp(10px, 1.8vh, 16px); }
-        .lb-list {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 3px;
-            width: 100%;
-            max-height: 70px;
-            overflow-y: auto;
-        }
-        /* 隐藏滚动条让UI更整洁 */
-        .lb-list::-webkit-scrollbar { display: none; }
-        .lb-badge {
-            font-family: 'Microsoft JhengHei', sans-serif;
-            font-size: clamp(8.5px, 1.2vh, 11px);
-            border: 1px solid;
-            border-radius: 2px;
-            padding: 2px 4px;
-            background: rgba(0,0,0,0.6);
-            text-shadow: 1px 1px 0 #000;
-            line-height: 1.1;
+            position: relative;
+            padding: 2px;
+            padding-bottom: 4px;
             text-align: center;
-            white-space: pre-wrap;
-            word-break: break-word;
+            box-shadow: inset -2px -2px 0 rgba(0,0,0,0.2), inset 2px 2px 0 rgba(255,255,255,0.5);
+        }
+        
+        .tile.corner { justify-content: center; } /* 四个角落居中 */
+
+        .emoji-icon { font-size: calc(var(--board-size) * 0.025); margin-bottom: 2px; }
+        .tile-name {
+            font-family: var(--font-sans);
+            font-size: calc(var(--board-size) * 0.013);
+            font-weight: bold;
+            line-height: 1.1;
+            word-wrap: break-word;
+            overflow-wrap: anywhere;
+            width: 100%;
+        }
+        .tile-price {
+            font-family: var(--font-pixel-narrow);
+            font-size: calc(var(--board-size) * 0.014);
+            color: #333;
+            margin-top: 2px;
         }
 
-        .board-center-header h2 { color: #fff; text-shadow: var(--mc-text-shadow); font-size: clamp(20px, 4vh, 48px); margin-bottom: 5px;}
-        .board-center-header p { color: #ddd; font-family: 'Microsoft JhengHei', sans-serif; font-size: clamp(12px, 2vh, 20px); margin-bottom: 5px;}
-        .board-center-header .sub { color:#ffffaa; font-family: 'Press Start 2P', monospace; font-size:clamp(9px, 1.5vh, 14px);}
-
-        /* 互动控制区 (仅保留摇骰子) */
-        .center-interactive {
+        /* 棋子设计 */
+        .tokens-container {
+            position: absolute;
+            top: 2px;
+            left: 0;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            gap: 2px;
+            flex-wrap: wrap;
+            z-index: 10;
+        }
+        .token {
+            width: calc(var(--board-size) * 0.018);
+            height: calc(var(--board-size) * 0.018);
+            border: 1px solid #000;
             display: flex;
             justify-content: center;
             align-items: center;
-            width: 100%;
-            margin-top: clamp(10px, 2vh, 20px);
+            font-family: var(--font-pixel);
+            font-size: calc(var(--board-size) * 0.01);
+            color: #fff;
+            text-shadow: 1px 1px 0 #000;
+            box-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+            transition: all 0.3s ease;
         }
 
-        /* 摇骰子大色块 */
+        /* =================棋盘中心交互区================= */
+        .board-center {
+            grid-column: 2 / 11;
+            grid-row: 2 / 11;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: calc(var(--board-size) * 0.03);
+            padding: 20px;
+        }
+
+        /* 排行榜 */
+        .leaderboard {
+            background: rgba(0, 0, 0, 0.6);
+            border: 2px solid #fff;
+            padding: 10px;
+            width: 90%;
+            text-align: center;
+            color: #fff;
+            border-radius: 5px;
+        }
+        .lb-title { font-family: var(--font-sans); font-size: 12px; margin-bottom: 5px; color: #ccc;}
+        .lb-stats { display: flex; justify-content: center; gap: 15px; font-family: var(--font-pixel); font-size: 16px; margin-bottom: 8px;}
+        .lb-badges {
+            display: flex; flex-wrap: wrap; gap: 5px; justify-content: center;
+            max-height: 50px; overflow-y: auto;
+        }
+        .badge {
+            font-family: var(--font-sans); font-size: 10px; padding: 2px 5px;
+            background: #222; border-left: 3px solid; white-space: nowrap;
+        }
+
+        .center-title { text-align: center; color: #fff; font-family: var(--font-pixel); text-shadow: 2px 2px 0 #000; }
+        .center-title h2 { font-size: calc(var(--board-size) * 0.04); margin-bottom: 5px; }
+        .center-title p { font-family: var(--font-sans); font-size: calc(var(--board-size) * 0.02); margin-bottom: 5px;}
+        .center-title .sub { font-size: calc(var(--board-size) * 0.015); color: #ffff00; }
+
+        /* 摇骰子按钮块 */
         .roll-block {
             display: flex;
-            height: clamp(50px, 8vh, 80px); width: clamp(220px, 30vw, 320px);
-            border: 4px solid var(--mc-border-black);
-            background-color: var(--mc-border-black); 
-            gap: 4px; 
-            box-shadow: 4px 4px 0px rgba(0,0,0,0.5);
+            border: 4px solid #000;
+            box-shadow: 4px 4px 0 #000;
+            cursor: pointer;
+            transition: transform 0.1s;
+            width: calc(var(--board-size) * 0.35);
+            height: calc(var(--board-size) * 0.07);
         }
-        .roll-block .dice-display {
-            width: clamp(50px, 8vh, 80px); height: 100%; background-color: var(--mc-panel-bg);
-            box-shadow: inset 4px 4px 0px var(--mc-border-light), inset -4px -4px 0px var(--mc-border-dark);
+        .roll-block:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 #000; }
+        .roll-icon {
+            background: #d3d3d3;
+            width: 30%;
             display: flex; justify-content: center; align-items: center;
-            font-size: clamp(24px, 4vh, 40px); color: #fff; text-shadow: 2px 2px 0 #000;
+            font-family: var(--font-pixel); font-size: 24px; color: #fff;
+            text-shadow: 2px 2px 0 #000; border-right: 4px solid #000;
         }
-        .roll-block .roll-btn-inner {
-            flex-grow: 1; height: 100%; background-color: var(--mc-orange); 
-            box-shadow: inset 4px 4px 0px rgba(255,255,255,0.4), inset -4px -4px 0px rgba(0,0,0,0.4);
+        .roll-btn-inner {
+            flex-grow: 1;
             display: flex; justify-content: center; align-items: center;
-            font-family: 'Microsoft JhengHei', 'SimHei', sans-serif;
-            font-size: clamp(16px, 2.5vh, 24px); letter-spacing: 1px; font-weight: bold; color: #fff; text-shadow: var(--mc-text-shadow);
-            cursor: pointer; border: none; transition: background-color 0.2s;
+            font-family: var(--font-sans); font-size: calc(var(--board-size) * 0.02);
+            font-weight: bold; color: #fff; text-shadow: 1px 1px 0 #000;
         }
-        .roll-block .roll-btn-inner:active { box-shadow: inset 4px 4px 0px rgba(0,0,0,0.4), inset -4px -4px 0px rgba(255,255,255,0.4); padding-top: 4px; padding-left: 4px; }
-        .roll-block .roll-btn-inner:disabled { background-color: #555 !important; color: #888; text-shadow: none; cursor: not-allowed; box-shadow: inset 4px 4px 0px #3c3c3c, inset -4px -4px 0px #777; }
 
-        /* 5张可抽取的卡牌 (保持不变) */
-        .cards-row {
-            display: flex;
-            justify-content: center;
-            gap: clamp(5px, 1vw, 20px);
-            width: 100%;
-            margin-top: 10px;
-            margin-bottom: 10px;
-            padding: 0 10px;
+        /* 实体卡牌堆 */
+        .cards-deck {
+            display: flex; gap: calc(var(--board-size) * 0.01);
+            justify-content: center; align-items: center; margin-top: 10px;
         }
         .chance-card {
-            width: clamp(40px, 6vw, 75px);
-            height: clamp(60px, 9vw, 105px);
-            background-color: #a855f7;
-            border: 3px solid var(--mc-border-black);
-            box-shadow: inset 3px 3px 0px #d8b4fe, inset -3px -3px 0px #7e22ce, 4px 4px 0px rgba(0,0,0,0.5);
+            width: calc(var(--board-size) * 0.06);
+            height: calc(var(--board-size) * 0.09);
+            background: #3a3a3a;
+            border: 2px solid #111;
+            border-radius: 4px;
             display: flex; justify-content: center; align-items: center;
-            position: relative; transition: 0.2s;
-            background-image: 
-                linear-gradient(45deg, rgba(0,0,0,0.15) 25%, transparent 25%, transparent 75%, rgba(0,0,0,0.15) 75%, rgba(0,0,0,0.15)),
-                linear-gradient(45deg, rgba(0,0,0,0.15) 25%, transparent 25%, transparent 75%, rgba(0,0,0,0.15) 75%, rgba(0,0,0,0.15));
-            background-size: 16px 16px;
-            background-position: 0 0, 8px 8px;
+            font-family: var(--font-pixel); font-size: calc(var(--board-size) * 0.03); color: #222;
+            box-shadow: 2px 2px 0 rgba(0,0,0,0.8);
+            transition: all 0.3s ease;
+            position: relative;
+            background-image: repeating-linear-gradient(45deg, transparent, transparent 5px, rgba(0,0,0,0.1) 5px, rgba(0,0,0,0.1) 10px);
         }
-        .chance-card span {
-            font-family: 'Press Start 2P', monospace; font-size: clamp(20px, 3vh, 32px); color: #fff; text-shadow: 2px 2px 0 #000;
+        .chance-card.active {
+            cursor: pointer; color: #fff; background: #673ab7; border-color: #fff;
+            animation: float 1.5s ease-in-out infinite, pulseGlow 1.5s infinite;
         }
-        .chance-card.disabled { filter: grayscale(1) brightness(0.6); cursor: not-allowed; }
-        .chance-card.glow { animation: cardGlow 1s ease-in-out infinite alternate; cursor: pointer; }
-        .chance-card.glow:hover { transform: translateY(-10px); }
-        .chance-card.picked { transform: scale(1.1) translateY(-15px); box-shadow: 0 0 20px #fff, inset 3px 3px 0px #d8b4fe, inset -3px -3px 0px #7e22ce; z-index: 10; }
+        .chance-card.active:hover { transform: translateY(-10px) scale(1.1); z-index: 2; }
         
-        @keyframes cardGlow {
-            from { box-shadow: 0 0 5px #d8b4fe, inset 3px 3px 0px #d8b4fe, inset -3px -3px 0px #7e22ce, 4px 4px 0px rgba(0,0,0,0.5); transform: translateY(0); }
-            to { box-shadow: 0 0 20px #d8b4fe, inset 3px 3px 0px #d8b4fe, inset -3px -3px 0px #7e22ce, 4px 10px 0px rgba(0,0,0,0.3); transform: translateY(-6px); }
-        }
+        @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-5px); } 100% { transform: translateY(0px); } }
+        @keyframes pulseGlow { 0% { box-shadow: 0 0 5px #b388ff; } 50% { box-shadow: 0 0 20px #b388ff; } 100% { box-shadow: 0 0 5px #b388ff; } }
 
-        /* ================= 格子与棋子样式 ================= */
-        .tile {
-            background-color: #9e9e9e; border: 2px solid #000;
-            box-shadow: inset 2px 2px 0px #d4d4d4, inset -2px -2px 0px #555;
-            display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
-            text-align: center; 
-            padding-bottom: 8px; padding-left: 2px; padding-right: 2px; padding-top: 16px; /* 顶部留给棋子 */
-            position: relative; overflow: hidden; 
-        }
-        .tile.corner { background-color: #e0e0e0; justify-content: center; padding-bottom: 2px; padding-top: 2px;}
-        
-        .tile .icon { 
-            font-size: calc(var(--board-size) * 0.024); 
-            margin-bottom: 2px; filter: drop-shadow(1px 1px 0px rgba(0,0,0,0.5)); flex-shrink: 0;
-        }
-        /* 强制换行防止溢出 */
-        .tile .name { 
-            font-size: calc(var(--board-size) * 0.0115); 
-            font-weight: bold; font-family: 'Microsoft JhengHei', sans-serif; 
-            line-height: 1.1; width: 100%; word-wrap: break-word; overflow-wrap: anywhere;
-        }
-        .tile .desc { 
-            font-size: calc(var(--board-size) * 0.013); 
-            font-family: 'VT323', monospace; color: #fff; text-shadow: 1px 1px 0 #000; margin-top: 2px; flex-shrink: 0;
-        }
-        
-        .owner-bar { position: absolute; bottom: 0; left: 0; right: 0; height: 6px; border-top: 1px solid #000; display: none; }
-
-        /* 棋子放置在格子顶部边缘 */
-        .tokens-container {
-            position: absolute; top: 2px; left: 2px; right: 2px;
-            display: flex; flex-direction: row; flex-wrap: wrap; justify-content: center; gap: 2px; z-index: 5;
-        }
-        .mc-token {
-            width: calc(var(--board-size) * 0.015); height: calc(var(--board-size) * 0.015); 
-            border: 1px solid #000; box-shadow: inset -1px -1px 0px rgba(0,0,0,0.5), inset 1px 1px 0px rgba(255,255,255,0.5);
-            font-family: 'Press Start 2P', monospace; font-size: calc(var(--board-size) * 0.01); 
-            color: #fff; text-shadow: 1px 1px 0px #000; display: flex; justify-content: center; align-items: center;
-            cursor: help; transition: transform 0.1s;
-        }
-        .mc-token:hover { transform: scale(1.5) translateY(2px); z-index: 10;}
-
-        /* 通用按钮 */
-        .mc-btn-general {
-            font-family: 'Press Start 2P', 'Microsoft JhengHei', sans-serif;
-            background-color: #8b8b8b; border: 4px solid var(--mc-border-black); box-shadow: inset 4px 4px 0px #d4d4d4, inset -4px -4px 0px #3c3c3c;
-            color: #fff; text-shadow: var(--mc-text-shadow); padding: 12px 20px; font-size: 16px; cursor: pointer; text-align: center;
-        }
-        .mc-btn-general:hover { background-color: #9c9c9c; }
-        .mc-btn-general:active { box-shadow: inset 4px 4px 0px #3c3c3c, inset -4px -4px 0px #d4d4d4; padding: 14px 18px 10px 22px; }
-        .mc-btn-primary { background-color: #22c55e; box-shadow: inset 4px 4px 0px #4ade80, inset -4px -4px 0px #166534; }
-        .mc-btn-primary:hover { background-color: #4ade80; }
-        .mc-btn-primary:active { box-shadow: inset 4px 4px 0px #166534, inset -4px -4px 0px #4ade80; }
-        .mc-btn-danger { background-color: #ef4444; box-shadow: inset 4px 4px 0px #f87171, inset -4px -4px 0px #991b1b; }
-        .mc-btn-danger:hover { background-color: #f87171; }
-        .mc-btn-danger:active { box-shadow: inset 4px 4px 0px #991b1b, inset -4px -4px 0px #f87171; }
-
+        /* =================弹窗系统================= */
         .modal-overlay {
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: rgba(0,0,0,0.8); display: none; justify-content: center; align-items: center; z-index: 100;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7); display: none;
+            justify-content: center; align-items: center; z-index: 100;
         }
-        .modal { width: 550px; max-width: 90vw; padding: 35px; text-align: center; }
-        .modal h2 { font-size: 24px; margin-bottom: 20px; color: #111; font-family: 'Microsoft JhengHei', sans-serif; font-weight: bold;}
-        .modal p { font-family: 'Microsoft JhengHei', sans-serif; font-size: 16px; margin-bottom: 30px; line-height: 1.6; color: #000; }
-        .modal select { padding: 10px; font-family: 'Microsoft JhengHei'; font-size: 16px; width: 85%; margin-bottom: 25px; background: #c6c6c6; border: 4px solid #000;}
-        .modal-btns { display: flex; flex-direction: column; gap: 15px; justify-content: center; }
-        .modal-btns.row { flex-direction: row; }
+        .modal-content {
+            background: #e0e0e0; border: 4px solid #000; padding: 20px;
+            text-align: center; max-width: 500px; width: 90%;
+            box-shadow: 8px 8px 0 #000; font-family: var(--font-sans);
+        }
+        .modal-content h3 { margin-bottom: 15px; font-size: 22px; }
+        .modal-dice-result { font-family: var(--font-pixel); font-size: 48px; margin: 15px 0; }
+        .modal-btn {
+            background: #4caf50; border: 3px solid #000; padding: 10px 20px;
+            color: #fff; font-family: var(--font-sans); font-size: 16px; font-weight: bold;
+            cursor: pointer; margin: 5px; box-shadow: 3px 3px 0 #000; width: 100%;
+        }
+        .modal-btn:hover { background: #45a049; }
+        .token-choice-btn {
+            background: #888; color: #fff; display: flex; flex-direction: column;
+            align-items: center; gap: 5px; margin-bottom: 10px;
+        }
+        .token-choice-btn:hover { background: #666; }
+        .expected-dest { color: #ffeb3b; font-size: 14px; }
+        
+        .quiz-opt { text-align: left; background: #fff; color: #000; }
+        .quiz-opt:hover { background: #ddd; }
+        .quiz-feedback { margin-top: 15px; padding: 10px; background: #dff0d8; color: #3c763d; border: 2px solid #3c763d; font-weight: bold; display: none; }
 
+        /* =================📱 移动端自适应排版================= */
+        @media screen and (max-width: 850px) {
+            body {
+                overflow-y: auto !important;
+                height: auto !important;
+                padding: 10px 0;
+            }
+            #game-container {
+                flex-direction: column;
+                align-items: center;
+                gap: 20px;
+            }
+            /* 左侧面板变顶部面板 */
+            #left-panel {
+                width: 95% !important;
+                height: auto !important;
+                max-height: unset;
+            }
+            .log-box { height: 150px; } /* 限制日志高度可滑动 */
+            
+            /* 棋盘大缩放 */
+            #board-wrapper {
+                --board-size: 96vw !important;
+                width: var(--board-size) !important;
+                height: var(--board-size) !important;
+                margin: 0 auto;
+            }
+            /* 中心区域缩小防重叠 */
+            .board-center {
+                transform: scale(0.65) !important;
+                width: 140% !important; 
+            }
+            /* 极限压缩字体 */
+            .tile-name { font-size: 9px !important; line-height: 1 !important; }
+            .tile-price { font-size: 8px !important; }
+            .emoji-icon { font-size: 16px !important; }
+            .token { width: 12px !important; height: 12px !important; font-size: 8px !important; }
+        }
     </style>
 </head>
 <body>
 
-    <div class="sidebar">
-        <div class="mc-panel header">
-            <h1 style="font-family: 'Press Start 2P', sans-serif;" id="ui-title">ZCB MONOPOLY</h1>
-            <button class="lang-toggle" onclick="toggleLang()">
-                <span>🌐</span> <span id="lang-text">EN / 繁中</span>
-            </button>
+<div id="game-container">
+    <div id="left-panel">
+        <button id="lang-btn" onclick="toggleLanguage()">🌐 EN / 繁中</button>
+        <div class="title-box">
+            <h1>ZCB MONOPOLY</h1>
         </div>
-
-        <div id="players-container" style="display:flex; flex-direction:column; gap:12px;"></div>
-
-        <div class="log-container" id="log-container"></div>
+        <div id="players-container"></div>
+        <div class="log-box" id="sys-log">
+            <div class="log-entry">> 系統已就緒，歡迎來到零碳天地大富翁。</div>
+        </div>
     </div>
 
-    <div class="board-container">
-        <div class="board" id="board">
-            <div class="board-center">
-                <!-- 动态排行榜 -->
-                <div class="leaderboard" id="leaderboard">
-                    <div class="lb-title" id="ui-lb-title">地塊佔領統計 / Plots Owned</div>
-                    <div class="lb-stats">
-                        <div class="lb-col">
-                            <div class="lb-item" style="border-bottom-color: var(--mc-orange);">
-                                <span class="role" style="color: var(--mc-orange);">[CIC]</span> <span id="lb-count-0">0</span>
-                            </div>
-                            <div class="lb-list" id="lb-list-0"><span style="color:#777; font-size:10px;">無 / None</span></div>
-                        </div>
-                        <div class="lb-col">
-                            <div class="lb-item" style="border-bottom-color: var(--mc-green);">
-                                <span class="role" style="color: var(--mc-green);">[NGO]</span> <span id="lb-count-1">0</span>
-                            </div>
-                            <div class="lb-list" id="lb-list-1"><span style="color:#777; font-size:10px;">無 / None</span></div>
-                        </div>
-                        <div class="lb-col">
-                            <div class="lb-item" style="border-bottom-color: var(--mc-blue);">
-                                <span class="role" style="color: var(--mc-blue);">[PUB]</span> <span id="lb-count-2">0</span>
-                            </div>
-                            <div class="lb-list" id="lb-list-2"><span style="color:#777; font-size:10px;">無 / None</span></div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="board-center-header">
-                    <h2>ZCB PARK</h2>
-                    <p id="ui-board-desc">生態修復 (Ecological Restoration)</p>
-                    <p class="sub">> Dual Token Mode Active</p>
-                </div>
-                
-                <!-- 互动控制区 (仅保留摇骰子) -->
-                <div class="center-interactive">
-                    <div class="roll-block">
-                        <div class="dice-display" id="dice-display">?</div>
-                        <button class="roll-btn-inner" id="roll-btn" onclick="rollDice()">[CIC] 搖骰子</button>
-                    </div>
-                </div>
-
-                <!-- 5张可抽取的卡牌 -->
-                <div class="cards-row" id="cards-row">
-                    <div class="chance-card disabled" onclick="pickCard(0)"><span>?</span></div>
-                    <div class="chance-card disabled" onclick="pickCard(1)"><span>?</span></div>
-                    <div class="chance-card disabled" onclick="pickCard(2)"><span>?</span></div>
-                    <div class="chance-card disabled" onclick="pickCard(3)"><span>?</span></div>
-                    <div class="chance-card disabled" onclick="pickCard(4)"><span>?</span></div>
-                </div>
-
+    <div id="board-wrapper">
+        <div class="board-center">
+            
+            <div class="leaderboard">
+                <div class="lb-title" id="lb-title">地塊佔領統計 / Territory Owned</div>
+                <div class="lb-stats" id="lb-stats"></div>
+                <div class="lb-badges" id="lb-badges"></div>
             </div>
+
+            <div class="center-title">
+                <h2>ZCB PARK</h2>
+                <p id="center-subtitle">生態修復 (Ecological Restoration)</p>
+                <div class="sub">> Dual Token Mode Active</div>
+            </div>
+
+            <div class="roll-block" id="btn-roll" onclick="rollDice()">
+                <div class="roll-icon">?</div>
+                <div class="roll-btn-inner" id="roll-btn-text" style="background-color: #ff6a00;">[CIC] 搖骰子</div>
+            </div>
+
+            <div class="cards-deck">
+                <div class="chance-card" onclick="drawChanceCard(this)">?</div>
+                <div class="chance-card" onclick="drawChanceCard(this)">?</div>
+                <div class="chance-card" onclick="drawChanceCard(this)">?</div>
+                <div class="chance-card" onclick="drawChanceCard(this)">?</div>
+                <div class="chance-card" onclick="drawChanceCard(this)">?</div>
+            </div>
+
         </div>
     </div>
+</div>
 
-    <div class="modal-overlay" id="modal-overlay">
-        <div class="mc-panel modal" id="modal">
-            <h2 id="modal-title">TITLE</h2>
-            <p id="modal-desc">Description text goes here...</p>
-            <div class="modal-btns row" id="modal-btns"></div>
-        </div>
+<div class="modal-overlay" id="generic-modal">
+    <div class="modal-content">
+        <h3 id="gm-title">提示</h3>
+        <p id="gm-desc"></p>
+        <div id="gm-extra"></div>
+        <button class="modal-btn" onclick="closeGenericModal()" id="gm-btn">確認</button>
     </div>
+</div>
 
-    <script>
-        let currentLang = 'zh'; 
-        let isWaitingForChance = false; 
-
-        const i18n = {
-            zh: {
-                subtitle: "40格完整棋盤 | 像素雙棋子版",
-                roll: "搖骰子",
-                boardDesc: "生態修復 (Ecological Restoration)",
-                lbTitle: "地塊佔領統計",
-                target: "目標",
-                buyTitle: "可建設用地: ",
-                buyDesc1: "符合你方目標！<br><br>建設費用: $",
-                buyDesc2: "。<br>是否投資建設該設施？",
-                buyBtn: "購買 ($100)",
-                skipBtn: "跳過",
-                wrongCampTitle: "陣營目標不符",
-                wrongCampDesc: "不符合你方的核心利益目標，無法進行投資。",
-                okBtn: "確認",
-                payTitle: "支付費用",
-                payDesc1: "已自動支付考察費用：$",
-                payBtn: "確認扣款",
-                quizTitle: "生態問答挑戰 (QUIZ)",
-                quizDesc: "面對城市高溫，哪種策略降溫效果最好？<br><br>答對 +$200，答錯 -$200。",
-                quizAns1: "增加遮陽喬木",
-                quizAns2: "大面积硬质铺装",
-                chanceTitle: "機會卡 (CHANCE)",
-                chanceWaitTitle: "抵達機會卡",
-                chanceWaitDesc: "請點擊棋盤正中央發光的【機會卡牌】，抽取您的隨機事件！",
-                foundTitle: "基金會贊助",
-                foundDesc: "獲得綠色建設基金贊助！<br>資金立刻增加 $400。",
-                jailTitle: "惡劣天氣 (JAIL)",
-                jailDesc: "遭遇颱風暴雨，工程被迫暫停。<br>下一回合該隊伍可能失去行動機會。",
-                jailBtn: "躲避颱風",
-                freeTitle: "任意傳送 (FREEDOM)",
-                freeDesc: "你獲得了自由選擇權！<br>請選擇你想讓這枚棋子飛往的目的地：",
-                freeBtn: "立刻傳送",
-                moveTitle: "行動策略選擇",
-                moveDesc: "請選擇你要移動的棋子方塊：",
+<script>
+    // ================= 语言配置 =================
+    let currentLang = 'zh'; // 'zh' 或 'en'
+    const i18n = {
+        zh: {
+            title: "生態修復 (Ecological Restoration)",
+            roll: "搖骰子",
+            logStart: "> 系統：MC 地圖已生成 (11x11, 共40格)，歡迎來到零碳天地。",
+            btnConfirm: "確認",
+            btnTeleport: "立刻傳送",
+            lbTitle: "地塊佔領統計",
+            roles: {
+                CIC: { name: "建造業議會", target: "目標: 偏好技術設施" },
+                NGO: { name: "生態組織", target: "目標: 偏好原生林/濕地" },
+                PUB: { name: "公眾群體", target: "目標: 偏好教育/廣場" }
+            },
+            modal: {
+                actionTitle: "行動策略選擇",
+                rolled: "你擲出了",
+                pts: "點！",
+                selectToken: "請選擇你要移動的棋子方塊：",
                 moveToken: "移動棋子",
-                currentLoc: "當前",
-                expectLoc: "➔ 預計到達",
-                logInit: "系統：MC 地圖已生成 (11x11, 共40格)，歡迎來到零碳天地。",
-                logPassGo: " 經過起點，獎勵 $200。",
-                logMove: " 抵達 ",
-                logPay: " 支付了參觀費 $",
-                logBuy: " 成功投資了 ",
-                logQuizWin: " 問答正確！+$200。",
-                logQuizLose: " 問答錯誤！-$200。",
-                logBonus: " 觸發事件，資金變動 ",
-                logFly: " 使用傳送，飛到了 "
+                currentPos: "當前: ",
+                expectedPos: "預計到達: ",
+                chanceTitle: "機會卡 (CHANCE)",
+                quizTitle: "生態問答 (QUIZ)",
+                buyTitle: "投資建設",
+                buyDesc: "這是一片可建設空地，是否要投資？",
+                btnBuy: "投資建設",
+                btnSkip: "結束回合",
+                rentTitle: "支付參觀費",
+                freeTitle: "自由選擇 (FREEDOM)",
+                freeDesc: "你可以傳送到地圖上的任何一個格子！請選擇目標："
             },
-            en: {
-                subtitle: "40 Tiles Edition | Dual Tokens",
-                roll: "ROLL DICE",
-                boardDesc: "Ecological Restoration",
-                lbTitle: "Plots Owned",
-                target: "Target",
-                buyTitle: "Available Plot: ",
-                buyDesc1: "Matches your goal!<br><br>Cost: $",
-                buyDesc2: ".<br>Invest and build?",
-                buyBtn: "Buy ($100)",
-                skipBtn: "Skip",
-                wrongCampTitle: "Mismatched Goal",
-                wrongCampDesc: "Does not align with your core interests. Cannot invest here.",
-                okBtn: "Confirm",
-                payTitle: "Pay Toll",
-                payDesc1: "Automatically paid visitation fee: $",
-                payBtn: "Confirm Payment",
-                quizTitle: "Ecological Quiz",
-                quizDesc: "Which strategy is best for cooling urban heat?<br><br>Correct: +$200, Wrong: -$200.",
-                quizAns1: "Add shade trees",
-                quizAns2: "Large hard paving",
-                chanceTitle: "CHANCE",
-                chanceWaitTitle: "Landed on CHANCE",
-                chanceWaitDesc: "Please click one of the glowing cards in the center of the board to draw your random event!",
-                foundTitle: "FOUNDATION",
-                foundDesc: "Received Green Fund sponsorship!<br>Gain $400.",
-                jailTitle: "JAIL (Bad Weather)",
-                jailDesc: "Typhoon halts construction.<br>Skip next turn.",
-                jailBtn: "Take Shelter",
-                freeTitle: "FREEDOM OF CHOICE",
-                freeDesc: "You have freedom of choice!<br>Select destination for your token:",
-                freeBtn: "Teleport Now",
-                moveTitle: "Strategy Selection",
-                moveDesc: "Select which token to move:",
+            status: { available: "可建設", builtBy: "已被 {role} 建設" }
+        },
+        en: {
+            title: "Ecological Restoration",
+            roll: "ROLL DICE",
+            logStart: "> Sys: MC Map Generated (11x11, 40 Tiles). Welcome to ZCB.",
+            btnConfirm: "Confirm",
+            btnTeleport: "Teleport Now",
+            lbTitle: "Territory Owned",
+            roles: {
+                CIC: { name: "CIC", target: "Target: Tech & Facilities" },
+                NGO: { name: "NGO", target: "Target: Forests & Wetlands" },
+                PUB: { name: "Public", target: "Target: Education & Squares" }
+            },
+            modal: {
+                actionTitle: "Action Strategy",
+                rolled: "You rolled a ",
+                pts: "!",
+                selectToken: "Select a token block to move:",
                 moveToken: "Move Token",
-                currentLoc: "Current",
-                expectLoc: "➔ Expected",
-                logInit: "System: Map generated (11x11). Welcome to ZCB.",
-                logPassGo: " passed GO, +$200.",
-                logMove: " arrived at ",
-                logPay: " paid toll fee $",
-                logBuy: " invested in ",
-                logQuizWin: " answered correctly! +$200.",
-                logQuizLose: " answered wrong! -$200.",
-                logBonus: " triggered event, funds changed by ",
-                logFly: " teleported to "
-            }
-        };
+                currentPos: "Current: ",
+                expectedPos: "Expected: ",
+                chanceTitle: "Chance Card",
+                quizTitle: "Eco Quiz",
+                buyTitle: "Invest & Build",
+                buyDesc: "This is an available plot. Do you want to invest?",
+                btnBuy: "Invest",
+                btnSkip: "End Turn",
+                rentTitle: "Pay Visit Fee",
+                freeTitle: "Freedom Choice",
+                freeDesc: "You can teleport anywhere! Select your destination:"
+            },
+            status: { available: "Available", builtBy: "Built by {role}" }
+        }
+    };
 
-        function t(key) { return i18n[currentLang][key]; }
-        function v(zh, en) { return currentLang === 'zh' ? zh : en; }
+    // ================= 测验题库 (20题) =================
+    const quizDB = [
+        { en: { q:"Which strategy would you prioritize if visitors trample understory vegetation?", opts:["Add fences to restrict access", "Set clear paths and guide pedestrian flow", "Increase artificial maintenance", "Increase patrol frequency"], ans: 1 },
+          zh: { q:"游客踩踏导致林下植被受损,你会优先采取哪种策略?", opts:["增加围栏,限制进入", "设置明确步道并引导流线", "增加人工维护与补种", "提高巡逻管理频率"], ans: 1 } },
+        { en: { q:"In a constructed wetland system, which strategy best aligns with zero-carbon?", opts:["Continuous groundwater recharge", "Rainwater harvesting + plant filtration", "Regular manual water replacement", "Chemical purification"], ans: 1 },
+          zh: { q:"在人工湿地系统设计中,哪种策略最符合零碳理念?", opts:["使用地下水持续补水", "雨水收集+植物过滤系统", "定期人工换水", "使用化学净化设备"], ans: 1 } },
+        { en: { q:"If your goal is to increase the bird population, what would you prioritize?", opts:["Increase tall tree canopy layer", "Increase hard paving areas", "Increase nighttime lighting", "Increase open lawn areas"], ans: 0 },
+          zh: { q:"如果你希望增加鸟类数量,你会优先调整哪一项?", opts:["增加高大乔木层", "增加硬质铺装", "增加夜间照明", "增加开放草坪"], ans: 0 } },
+        { en: { q:"Why are native species prioritized in ecological restoration?", opts:["Lower construction costs", "Better adaptation to local climate", "Higher aesthetic value", "Faster growth rates"], ans: 1 },
+          zh: { q:"在生态修复中,为什么优先选择本土植物?", opts:["施工成本更低", "更适应本地气候与生态系统", "更美观", "生长速度更快"], ans: 1 } },
+        { en: { q:"Given HK's heavy rain, which design is more rational?", opts:["Large open lawns", "Permeable paving + stormwater retention", "Completely hard-paved", "Drainage pipes without landscape"], ans: 1 },
+          zh: { q:"面对香港的强降雨环境,哪种设计更合理?", opts:["大面积草坪", "透水铺装+雨水调蓄系统", "全部硬质铺装", "增加排水管但不做景观设计"], ans: 1 } },
+        { en: { q:"What is the primary ecological value of gabions?", opts:["Lowest cost", "Structural stability + microhabitats", "Easy to dismantle", "Commercial display"], ans: 1 },
+          zh: { q:"石笼在生态设计中的价值体现在?", opts:["成本最低", "结构稳定同时提供微生境", "易于拆除", "更适合商业展示"], ans: 1 } },
+        { en: { q:"To lower site temperature, what is the most effective strategy?", opts:["Increase shade trees + green coverage", "Add outdoor AC", "Use light-colored paving", "Reduce vegetation"], ans: 0 },
+          zh: { q:"降低场地温度最有效的策略是?", opts:["增加遮阳乔木+提高绿化覆盖率", "增加空调设备", "使用浅色铺装", "减少植被便于通风"], ans: 0 } },
+        { en: { q:"What is the main purpose of routing rainwater into a wetland?", opts:["Store water", "Natural filtration", "Provide recreation", "Enhance visual effects"], ans: 1 },
+          zh: { q:"雨水流入人工湿地的主要目的是什么?", opts:["储存景观水体", "通过植物和土壤进行自然过滤", "提供娱乐功能", "增加视觉效果"], ans: 1 } },
+        { en: { q:"If visitors put pressure on ecology, how to balance?", opts:["Keep fully open", "Limit capacity + educational guidance", "Close off zones", "Add commercial facilities"], ans: 1 },
+          zh: { q:"如果游客数量对生态造成压力,如何平衡?", opts:["完全开放,不做限制", "限制进入人数+增加教育引导", "完全封闭生态区", "增加商业设施分流人群"], ans: 1 } },
+        { en: { q:"Between 'exhibition space' and 'native forest', a balanced choice is:", opts:["Prioritize exhibition", "Prioritize forest", "Optimize space & layouts for both", "Status quo"], ans: 2 },
+          zh: { q:"在“展览空间”和“原生林”之间做选择,你会?", opts:["优先展览", "优先原生林", "两者结合,压缩建筑并优化布局", "保持现状"], ans: 2 } },
+        { en: { q:"Which organisms are critical for nutrient cycling?", opts:["Birds", "Decomposers", "Pollinating insects", "Small mammals"], ans: 1 },
+          zh: { q:"哪类生物对养分循环最关键?", opts:["鸟类", "分解者", "授粉昆虫", "小型哺乳动物"], ans: 1 } },
+        { en: { q:"What is the role of butterflies and bees?", opts:["Control pests", "Promote plant reproduction", "Improve soil", "Regulate populations"], ans: 1 },
+          zh: { q:"蝴蝶和蜜蜂在生态系统中的主要作用是?", opts:["控制害虫数量", "促进植物繁殖", "改善土壤结构", "调节种群关系"], ans: 1 } },
+        { en: { q:"What structure does a healthy urban native forest possess?", opts:["Single tree canopy", "Multi-layered vegetation", "Lawn-dominant", "Artificial-dominant"], ans: 1 },
+          zh: { q:"健康的城市原生林通常具备哪种结构?", opts:["单一乔木层", "多层植被结构", "草坪为主覆盖", "人工景观主导"], ans: 1 } },
+        { en: { q:"Why are frogs used as indicator species?", opts:["Stable population", "Highly sensitive to environment", "Short life cycle", "Widely distributed"], ans: 1 },
+          zh: { q:"为什么青蛙常作为生态指示物种?", opts:["数量较为稳定", "对环境敏感", "生命周期较短", "分布范围较广"], ans: 1 } },
+        { en: { q:"Main mechanism of constructed wetland water purification?", opts:["Evaporation", "Plant and microbial action", "Artificial filtration", "Sunlight reaction"], ans: 1 },
+          zh: { q:"人工湿地净化水质的主要机制是?", opts:["水体自然蒸发", "植物微生物作用", "人工过滤设备", "阳光照射反应"], ans: 1 } },
+        { en: { q:"Main significance of increasing plant species?", opts:["Improves stability", "Enhances aesthetics", "Reduces costs", "Attracts humans"], ans: 0 },
+          zh: { q:"提高植物种类数量的主要生态意义是?", opts:["提高系统稳定性", "增强景观效果", "降低养护成本", "增加使用人群"], ans: 0 } },
+        { en: { q:"Which relationship represents basic food chain logic?", opts:["Plant->Bird->Insect", "Insect->Plant->Bird", "Plant->Insect->Bird", "Bird->Plant->Microbe"], ans: 2 },
+          zh: { q:"哪一条符合基本食物链逻辑?", opts:["植物->鸟类->昆虫", "昆虫->植物->鸟类", "植物->昆虫->鸟类", "鸟类->植物->微生物"], ans: 2 } },
+        { en: { q:"Primary way vegetation lowers urban temps?", opts:["Reflecting radiation", "Transpiration", "Air circulation", "Decreasing humidity"], ans: 1 },
+          zh: { q:"植被降低城市温度的主要方式是?", opts:["反射太阳辐射", "蒸腾作用降温", "提高空气流动", "减少地表湿度"], ans: 1 } },
+        { en: { q:"Core philosophy of 'low-intervention management'?", opts:["Reduce costs", "Promote natural succession", "Control visitors", "Improve efficiency"], ans: 1 },
+          zh: { q:"“低干预管理”的核心理念是?", opts:["降低维护成本", "促进自然演替", "控制游客数量", "提高管理效率"], ans: 1 } },
+        { en: { q:"Main reason for controlling invasive species?", opts:["Slow growth", "Disrupts ecological balance", "Poor aesthetics", "Difficult to manage"], ans: 1 },
+          zh: { q:"控制入侵物种的主要原因是?", opts:["生长速度较慢", "破坏生态平衡", "景观效果较差", "管理难度较高"], ans: 1 } }
+    ];
 
-        const COLORS = ['#f97316', '#22c55e', '#3b82f6']; 
+    // ================= 棋盘数据 (40格) =================
+    const tilesData = [
+        { id: 0, zh: "起點 GO", en: "START GO", type: "start", price: "+$200", icon: "🌞" },
+        { id: 1, zh: "太陽之謎", en: "Solar Mys.", type: "prop", price: 100, role: "PUB", icon: "☀️" },
+        { id: 2, zh: "隔離病房", en: "Iso. Ward", type: "prop", price: 100, role: "PUB", icon: "🏥" },
+        { id: 3, zh: "石籠牆", en: "Gabion", type: "prop", price: 100, role: "NGO", icon: "🧱" },
+        { id: 4, zh: "機會卡", en: "CHANCE", type: "chance", price: "CHANCE", icon: "❓" },
+        { id: 5, zh: "關於鳥類", en: "About Birds", type: "prop", price: 100, role: "PUB", icon: "🦤" },
+        { id: 6, zh: "零碳天地 Lv.3", en: "ZCB Lv.3", type: "prop", price: 100, role: "CIC", icon: "🏢" },
+        { id: 7, zh: "零碳天地 Lv.2", en: "ZCB Lv.2", type: "prop", price: 100, role: "CIC", icon: "🏢" },
+        { id: 8, zh: "零碳天地 Lv.1", en: "ZCB Lv.1", type: "prop", price: 100, role: "CIC", icon: "🏢" },
+        { id: 9, zh: "綠化牆", en: "Green Wall", type: "prop", price: 100, role: "NGO", icon: "🌿" },
+        { id: 10, zh: "基金贊助", en: "Funding", type: "corner", price: "+$400", icon: "💰" },
         
-        const players = [
-            { id: 0, type: "CIC", name_zh: "建造業議會", name_en: "CIC", target_zh: "偏好技術設施", target_en: "Tech & Facilities", money: 500, tokens: [0, 0], color: COLORS[0] },
-            { id: 1, type: "NGO", name_zh: "生態組織", name_en: "NGO", target_zh: "偏好原生林/濕地", target_en: "Forests & Wetlands", money: 500, tokens: [0, 0], color: COLORS[1] },
-            { id: 2, type: "PUB", name_zh: "公眾群體", name_en: "Public", target_zh: "偏好教育/廣場", target_en: "Education & Squares", money: 500, tokens: [0, 0], color: COLORS[2] }
+        { id: 11, zh: "生態問答", en: "QUIZ", type: "quiz", price: "QUIZ", icon: "📖" },
+        { id: 12, zh: "光電系統", en: "PV System", type: "prop", price: 100, role: "CIC", icon: "⚡" },
+        { id: 13, zh: "原生林 Lv.2", en: "Forest Lv.2", type: "prop", price: 100, role: "NGO", icon: "🌲" },
+        { id: 14, zh: "原生林 Lv.1", en: "Forest Lv.1", type: "prop", price: 100, role: "NGO", icon: "🌲" },
+        { id: 15, zh: "CITAC", en: "CITAC", type: "prop", price: 100, role: "CIC", icon: "💻" },
+        { id: 16, zh: "機會卡", en: "CHANCE", type: "chance", price: "CHANCE", icon: "❓" },
+        { id: 17, zh: "人工濕地", en: "Wetland", type: "prop", price: 100, role: "NGO", icon: "💧" },
+        { id: 18, zh: "多用途室 Lv.2", en: "Hall Lv.2", type: "prop", price: 100, role: "PUB", icon: "🏫" },
+        { id: 19, zh: "多用途室 Lv.1", en: "Hall Lv.1", type: "prop", price: 100, role: "PUB", icon: "🏫" },
+        { id: 20, zh: "自由選擇", en: "FREEDOM", type: "teleport", price: "FREEDOM", icon: "✈️" },
+
+        { id: 21, zh: "綠化牆", en: "Green Wall", type: "prop", price: 100, role: "NGO", icon: "🌿" },
+        { id: 22, zh: "雨水空調", en: "Rain A/C", type: "prop", price: 100, role: "CIC", icon: "❄️" },
+        { id: 23, zh: "石籠牆", en: "Gabion", type: "prop", price: 100, role: "NGO", icon: "🧱" },
+        { id: 24, zh: "光電系統", en: "PV System", type: "prop", price: 100, role: "CIC", icon: "⚡" },
+        { id: 25, zh: "室內展區 Lv.1", en: "Exhib. Lv.1", type: "prop", price: 100, role: "PUB", icon: "🖼️" },
+        { id: 26, zh: "室內展區 Lv.2", en: "Exhib. Lv.2", type: "prop", price: 100, role: "PUB", icon: "🖼️" },
+        { id: 27, zh: "室內展區 Lv.3", en: "Exhib. Lv.3", type: "prop", price: 100, role: "PUB", icon: "🖼️" },
+        { id: 28, zh: "機會卡", en: "CHANCE", type: "chance", price: "CHANCE", icon: "❓" },
+        { id: 29, zh: "人工濕地", en: "Wetland", type: "prop", price: 100, role: "NGO", icon: "💧" },
+        { id: 30, zh: "惡劣天氣", en: "PAUSE", type: "pause", price: "PAUSE", icon: "⛈️" },
+
+        { id: 31, zh: "生態問答", en: "QUIZ", type: "quiz", price: "QUIZ", icon: "📖" },
+        { id: 32, zh: "廣場 Lv.1", en: "Plaza Lv.1", type: "prop", price: 100, role: "PUB", icon: "🎪" },
+        { id: 33, zh: "廣場 Lv.2", en: "Plaza Lv.2", type: "prop", price: 100, role: "PUB", icon: "🎪" },
+        { id: 34, zh: "光電系統", en: "PV System", type: "prop", price: 100, role: "CIC", icon: "⚡" },
+        { id: 35, zh: "原生林 Lv.1", en: "Forest Lv.1", type: "prop", price: 100, role: "NGO", icon: "🌲" },
+        { id: 36, zh: "原生林 Lv.2", en: "Forest Lv.2", type: "prop", price: 100, role: "NGO", icon: "🌲" },
+        { id: 37, zh: "機會卡", en: "CHANCE", type: "chance", price: "CHANCE", icon: "❓" },
+        { id: 38, zh: "組裝合成", en: "MiC", type: "prop", price: 100, role: "CIC", icon: "🏗️" },
+        { id: 39, zh: "竹亭蒸汽", en: "Bamboo Pav.", type: "prop", price: 100, role: "PUB", icon: "⛺" }
+    ];
+
+    // ================= 游戏核心状态 =================
+    const players = [
+        { id: 'CIC', color: '#ff6a00', money: 500, tokens: [0, 0] },
+        { id: 'NGO', color: '#00c853', money: 500, tokens: [0, 0] },
+        { id: 'PUB', color: '#2962ff', money: 500, tokens: [0, 0] }
+    ];
+    let currentPlayerIndex = 0;
+    let properties = {}; // 记录地块占领情况 { tileId: ownerId }
+    let isChanceActive = false;
+    let pendingDiceResult = 0;
+
+    // ================= 初始化与渲染 =================
+    window.onload = () => {
+        renderBoard();
+        renderPlayers();
+        updateLog(getT('logStart'));
+        updateCenterUI();
+    };
+
+    function getT(key, path="zh") {
+        const langData = i18n[currentLang];
+        return key.split('.').reduce((o, i) => o[i], langData);
+    }
+
+    function toggleLanguage() {
+        currentLang = currentLang === 'zh' ? 'en' : 'zh';
+        document.getElementById('center-subtitle').innerText = getT('title');
+        document.getElementById('lb-title').innerText = getT('lbTitle');
+        renderBoard();
+        renderPlayers();
+        updateCenterUI();
+        updateLeaderboard();
+    }
+
+    function renderBoard() {
+        const wrapper = document.getElementById('board-wrapper');
+        document.querySelectorAll('.tile').forEach(e => e.remove());
+
+        const order = [
+            20,21,22,23,24,25,26,27,28,29,30,
+            19,31, 18,32, 17,33, 16,34, 15,35, 14,36, 13,37, 12,38, 11,39,
+            10,9,8,7,6,5,4,3,2,1,0
         ];
 
-        const tilesData = [
-            { id: 0, type: "START", zh: "起點 GO", en: "START GO", desc: "+$200", icon: "🏁" },
-            { id: 1, type: "PUB", zh: "太陽之謎", en: "Solar Mystery", desc: "$100", icon: "☀️", price: 100 },
-            { id: 2, type: "CIC", zh: "隔離病房", en: "MiC Ward", desc: "$100", icon: "🏥", price: 100 },
-            { id: 3, type: "NGO", zh: "石籠牆", en: "Gabion Wall", desc: "$100", icon: "🧱", price: 100 },
-            { id: 4, type: "CHANCE", zh: "機會卡", en: "CHANCE", desc: "CHANCE", icon: "❓" },
-            { id: 5, type: "PUB", zh: "關於鳥類", en: "About Birds", desc: "$100", icon: "🐦", price: 100 },
-            { id: 6, type: "CIC", zh: "零碳天地 Lv.3", en: "ZCB Lv.3", desc: "$100", icon: "🏢", price: 100 },
-            { id: 7, type: "CIC", zh: "零碳天地 Lv.2", en: "ZCB Lv.2", desc: "$100", icon: "🏢", price: 100 },
-            { id: 8, type: "CIC", zh: "零碳天地 Lv.1", en: "ZCB Lv.1", desc: "$100", icon: "🏢", price: 100 },
-            { id: 9, type: "NGO", zh: "綠化牆", en: "Green Wall", desc: "$100", icon: "🌿", price: 100 },
-            { id: 10, type: "FOUNDATION", zh: "基金贊助", en: "FOUNDATION", desc: "+$400", icon: "💰" },
-            { id: 11, type: "QUIZ", zh: "生態問答", en: "QUIZ", desc: "QUIZ", icon: "📖" },
-            { id: 12, type: "CIC", zh: "光電系統", en: "Solar PV", desc: "$100", icon: "⚡", price: 100 },
-            { id: 13, type: "NGO", zh: "原生林 Lv.2", en: "Woodland Lv.2", desc: "$100", icon: "🌲", price: 100 },
-            { id: 14, type: "NGO", zh: "原生林 Lv.1", en: "Woodland Lv.1", desc: "$100", icon: "🌲", price: 100 },
-            { id: 15, type: "CIC", zh: "CITAC", en: "CITAC", desc: "$100", icon: "💻", price: 100 },
-            { id: 16, type: "CHANCE", zh: "機會卡", en: "CHANCE", desc: "CHANCE", icon: "❓" },
-            { id: 17, type: "NGO", zh: "人工濕地", en: "Wetland", desc: "$100", icon: "💧", price: 100 },
-            { id: 18, type: "PUB", zh: "多用途室 Lv.2", en: "Hall Lv.2", desc: "$100", icon: "🏫", price: 100 },
-            { id: 19, type: "PUB", zh: "多用途室 Lv.1", en: "Hall Lv.1", desc: "$100", icon: "🏫", price: 100 },
-            { id: 20, type: "FREEDOM", zh: "自由選擇", en: "FREEDOM", desc: "FREEDOM", icon: "✈️" },
-            { id: 21, type: "NGO", zh: "綠化牆", en: "Green Wall", desc: "$100", icon: "🌿", price: 100 },
-            { id: 22, type: "CIC", zh: "雨水空調", en: "Rain AC", desc: "$100", icon: "❄️", price: 100 },
-            { id: 23, type: "NGO", zh: "石籠牆", en: "Gabion Wall", desc: "$100", icon: "🧱", price: 100 },
-            { id: 24, type: "CIC", zh: "光電系統", en: "Solar PV", desc: "$100", icon: "⚡", price: 100 },
-            { id: 25, type: "PUB", zh: "室內展區 Lv.1", en: "Exhibit Lv.1", desc: "$100", icon: "🖼️", price: 100 },
-            { id: 26, type: "PUB", zh: "室內展區 Lv.2", en: "Exhibit Lv.2", desc: "$100", icon: "🖼️", price: 100 },
-            { id: 27, type: "PUB", zh: "室內展區 Lv.3", en: "Exhibit Lv.3", desc: "$100", icon: "🖼️", price: 100 },
-            { id: 28, type: "CHANCE", zh: "機會卡", en: "CHANCE", desc: "CHANCE", icon: "❓" },
-            { id: 29, type: "NGO", zh: "人工濕地", en: "Wetland", desc: "$100", icon: "💧", price: 100 },
-            { id: 30, type: "JAIL", zh: "惡劣天氣", en: "PAUSE", desc: "PAUSE", icon: "⛈️" },
-            { id: 31, type: "QUIZ", zh: "生態問答", en: "QUIZ", desc: "QUIZ", icon: "📖" },
-            { id: 32, type: "PUB", zh: "廣場 Lv.1", en: "Square Lv.1", desc: "$100", icon: "🎪", price: 100 },
-            { id: 33, type: "PUB", zh: "廣場 Lv.2", en: "Square Lv.2", desc: "$100", icon: "🎪", price: 100 },
-            { id: 34, type: "CIC", zh: "光電系統", en: "Solar PV", desc: "$100", icon: "⚡", price: 100 },
-            { id: 35, type: "NGO", zh: "原生林 Lv.1", en: "Woodland Lv.1", desc: "$100", icon: "🌲", price: 100 },
-            { id: 36, type: "NGO", zh: "原生林 Lv.2", en: "Woodland Lv.2", desc: "$100", icon: "🌲", price: 100 },
-            { id: 37, type: "CHANCE", zh: "機會卡", en: "CHANCE", desc: "CHANCE", icon: "❓" },
-            { id: 38, type: "CIC", zh: "組裝合成", en: "MiC", desc: "$100", icon: "🏗️", price: 100 },
-            { id: 39, type: "PUB", zh: "竹亭蒸汽", en: "Bamboo Pavilion", desc: "$100", icon: "🏕️", price: 100 }
-        ];
-
-        const quizPool = [
-            {
-                q_zh: "你正在設計一片城市原生林區域，遊客踩踏導致林下植被受損，你會優先採取哪種策略？", q_en: "You are designing an urban native forest area. Visitors' trampling causes damage to the understory vegetation. Which strategy would you prioritize?",
-                options_zh: ["A. 增加圍欄，限制進入", "B. 設置明確步道並引導流線", "C. 增加人工維護與補種", "D. 提高巡邏管理頻率"],
-                options_en: ["A. Add fences to restrict access", "B. Set clear paths and guide pedestrian flow", "C. Increase artificial maintenance and replanting", "D. Increase the frequency of patrol management"],
-                ans: 1
-            },
-            {
-                q_zh: "在類似人工濕地系統設計中，以下哪種策略最符合零碳理念？", q_en: "In designing a constructed wetland system, which strategy best aligns with the zero-carbon concept?",
-                options_zh: ["A. 使用地下水持續補水", "B. 雨水收集 + 植物過濾系統", "C. 定期人工換水", "D. 使用化學淨化設備"],
-                options_en: ["A. Continuous groundwater recharge", "B. Rainwater harvesting + plant filtration system", "C. Regular manual water replacement", "D. Use of chemical purification equipment"],
-                ans: 1
-            },
-            {
-                q_zh: "如果你希望增加鳥類數量，你會優先調整哪一項？", q_en: "If your goal is to increase the bird population, which adjustment would you prioritize?",
-                options_zh: ["A. 增加高大喬木層", "B. 增加硬質鋪裝", "C. 增加夜間照明", "D. 增加開放草坪"],
-                options_en: ["A. Increase the tall tree canopy layer", "B. Increase hard paving areas", "C. Increase nighttime lighting", "D. Increase open lawn areas"],
-                ans: 0
-            },
-            {
-                q_zh: "在城市生態修復中，為什麼優先選擇本土植物 (native species)？", q_en: "Why are native species prioritized in urban ecological restoration?",
-                options_zh: ["A. 施工成本更低", "B. 更適應本地氣候與生態系統", "C. 更美觀", "D. 生長速度更快"],
-                options_en: ["A. Lower construction costs", "B. Better adaptation to the local climate & ecosystem", "C. Higher aesthetic value", "D. Faster growth rates"],
-                ans: 1
-            },
-            {
-                q_zh: "面對香港的強降雨和颱風環境，下列哪種設計更合理？", q_en: "Given Hong Kong's environment of heavy rain and typhoons, which design is more rational?",
-                options_zh: ["A. 大面積草坪", "B. 透水鋪裝 + 雨水調蓄系統", "C. 全部硬質鋪裝", "D. 增加排水管但不做景觀設計"],
-                options_en: ["A. Large areas of open lawns", "B. Permeable paving + stormwater retention system", "C. Completely hard-paved surfaces", "D. Add drainage pipes without landscape design"],
-                ans: 1
-            },
-            {
-                q_zh: "石籠 (gabion) 在生態設計中的價值主要體現在哪一點？", q_en: "What is the primary ecological value of gabions in landscape design?",
-                options_zh: ["A. 成本最低", "B. 結構穩定同時提供微生境", "C. 易於拆除", "D. 更適合商業展示"],
-                options_en: ["A. Lowest cost of implementation", "B. Structural stability while providing microhabitats", "C. Extremely easy to dismantle", "D. Better suited for commercial displays"],
-                ans: 1
-            },
-            {
-                q_zh: "如果目標是降低場地溫度 (約降低1°C)，最有效的策略是？", q_en: "If the goal is to lower the site temperature (e.g., by ~1°C), what is the most effective strategy?",
-                options_zh: ["A. 增加遮陽喬木 + 提高綠化覆蓋率", "B. 增加空調設備", "C. 使用淺色鋪裝", "D. 減少植被便於通風"],
-                options_en: ["A. Increase shade trees + raise green coverage", "B. Add outdoor air conditioning equipment", "C. Use light-colored paving", "D. Reduce vegetation to facilitate ventilation"],
-                ans: 0
-            },
-            {
-                q_zh: "在零碳公園中，雨水最終流入人工濕地的主要目的是什麼？", q_en: "In a zero-carbon park, what is the main purpose of routing rainwater into a constructed wetland?",
-                options_zh: ["A. 儲存景觀水體", "B. 通過植物和土壤進行自然過濾", "C. 提供娛樂功能", "D. 增加視覺效果"],
-                options_en: ["A. Store water for landscape features", "B. Natural filtration through plants and soil", "C. Provide recreational functions", "D. Enhance visual aesthetic effects"],
-                ans: 1
-            },
-            {
-                q_zh: "如果遊客數量增加，對生態造成壓力，你會如何平衡？", q_en: "If an increase in visitors puts pressure on the ecology, how would you balance it?",
-                options_zh: ["A. 完全開放，不做限制", "B. 限制進入人數 + 增加教育引導", "C. 完全封閉生態區", "D. 增加商業設施分流人群"],
-                options_en: ["A. Keep fully open without restrictions", "B. Limit visitor capacity + increase educational guidance", "C. Completely close off the ecological zones", "D. Add commercial facilities to divert crowds"],
-                ans: 1
-            },
-            {
-                q_zh: "如果你是項目負責人，需要在「增加展覽空間」和「擴大原生林面積」之間做選擇，你會？", q_en: "As a manager deciding between 'more exhibition space' and 'expanding native forest', you would:",
-                options_zh: ["A. 優先展覽空間，提高公眾參與", "B. 優先原生林，提高生態價值", "C. 兩者結合，壓縮建築面積並優化空間佈局", "D. 保持現狀，不做調整"],
-                options_en: ["A. Prioritize exhibition space", "B. Prioritize native forest", "C. Combine both by optimizing space & layouts", "D. Maintain the status quo"],
-                ans: 2
-            },
-            {
-                q_zh: "在城市生態系統中，哪類生物對養分循環最關鍵？", q_en: "Which organisms are most critical for nutrient cycling in urban ecosystems?",
-                options_zh: ["A. 鳥類", "B. 分解者", "C. 授粉昆蟲", "D. 小型哺乳動物"],
-                options_en: ["A. Birds", "B. Decomposers", "C. Pollinating insects", "D. Small mammals"],
-                ans: 1
-            },
-            {
-                q_zh: "蝴蝶和蜜蜂在生態系統中的主要作用是？", q_en: "What is the primary role of butterflies and bees in the ecosystem?",
-                options_zh: ["A. 控制害蟲數量", "B. 促進植物繁殖", "C. 改善土壤結構", "D. 調節種群關係"],
-                options_en: ["A. Control pest populations", "B. Promote plant reproduction", "C. Improve soil structure", "D. Regulate population dynamics"],
-                ans: 1
-            },
-            {
-                q_zh: "健康的城市原生林通常具備哪種結構？", q_en: "What structure does a healthy urban native forest typically possess?",
-                options_zh: ["A. 單一喬木層", "B. 多層植被結構", "C. 草坪為主覆蓋", "D. 人工景觀主導"],
-                options_en: ["A. A single tree canopy layer", "B. A multi-layered vegetation structure", "C. A lawn-dominant cover", "D. An artificial-landscape-dominant structure"],
-                ans: 1
-            },
-            {
-                q_zh: "為什麼青蛙常作為生態指示物種？", q_en: "Why are frogs often used as ecological indicator species?",
-                options_zh: ["A. 數量較為穩定", "B. 對環境敏感", "C. 生命周期較短", "D. 分布範圍較廣"],
-                options_en: ["A. Their populations are relatively stable", "B. They are highly sensitive to environmental changes", "C. They have short life cycles", "D. They are widely distributed"],
-                ans: 1
-            },
-            {
-                q_zh: "人工濕地淨化水質的主要機制是？", q_en: "What is the main mechanism by which constructed wetlands purify water?",
-                options_zh: ["A. 水體自然蒸發", "B. 植物微生物作用", "C. 人工過濾設備", "D. 陽光照射反應"],
-                options_en: ["A. Natural water evaporation", "B. Plant and microbial action", "C. Artificial filtration equipment", "D. Sunlight irradiation reactions"],
-                ans: 1
-            },
-            {
-                q_zh: "提高植物種類數量的主要生態意義是？", q_en: "What is the main ecological significance of increasing the number of plant species?",
-                options_zh: ["A. 提高系統穩定性", "B. 增強景觀效果", "C. 降低養護成本", "D. 增加使用人群"],
-                options_en: ["A. Improves ecosystem stability", "B. Enhances landscape aesthetics", "C. Reduces maintenance costs", "D. Attracts more human users"],
-                ans: 0
-            },
-            {
-                q_zh: "下列哪一條關係符合基本食物鏈邏輯？", q_en: "Which of the following relationships represents a basic food chain logic?",
-                options_zh: ["A. 植物 → 鳥類 → 昆蟲", "B. 昆蟲 → 植物 → 鳥類", "C. 植物 → 昆蟲 → 鳥類", "D. 鳥類 → 植物 → 微生物"],
-                options_en: ["A. Plant → Bird → Insect", "B. Insect → Plant → Bird", "C. Plant → Insect → Bird", "D. Bird → Plant → Microbe"],
-                ans: 2
-            },
-            {
-                q_zh: "植被降低城市溫度的主要方式是？", q_en: "What is the primary way vegetation lowers urban temperatures?",
-                options_zh: ["A. 反射太陽輻射", "B. 蒸騰作用降溫", "C. 提高空氣流動", "D. 減少地表濕度"],
-                options_en: ["A. Reflecting solar radiation", "B. Cooling through transpiration", "C. Increasing air circulation", "D. Decreasing surface humidity"],
-                ans: 1
-            },
-            {
-                q_zh: "「低干預管理」的核心理念是？", q_en: "What is the core philosophy of 'low-intervention management'?",
-                options_zh: ["A. 降低維護成本", "B. 促進自然演替", "C. 控制遊客數量", "D. 提高管理效率"],
-                options_en: ["A. Reduce maintenance costs", "B. Promote natural succession", "C. Control visitor numbers", "D. Improve management efficiency"],
-                ans: 1
-            },
-            {
-                q_zh: "控制入侵物種的主要原因是？", q_en: "What is the main reason for controlling invasive species?",
-                options_zh: ["A. 生長速度較慢", "B. 破壞生態平衡", "C. 景觀效果較差", "D. 管理難度較高"],
-                options_en: ["A. They have slow growth rates", "B. They disrupt the ecological balance", "C. They have poor landscape aesthetics", "D. They are difficult to manage"],
-                ans: 1
-            }
-        ];
-
-        let currentTurn = 0; 
-        let properties = {}; 
-        let isAnimating = false;
-        let rolledSteps = 0;
-
-        function getGridArea(i) {
-            if (i === 0) return '11 / 11';
-            if (i > 0 && i < 10) return `11 / ${11 - i}`;
-            if (i === 10) return '11 / 1';
-            if (i > 10 && i < 20) return `${11 - (i - 10)} / 1`;
-            if (i === 20) return '1 / 1';
-            if (i > 20 && i < 30) return `1 / ${i - 20 + 1}`;
-            if (i === 30) return '1 / 11';
-            if (i > 30 && i < 40) return `${i - 30 + 1} / 11`;
-        }
-
-        function toggleLang() {
-            currentLang = currentLang === 'zh' ? 'en' : 'zh';
-            updateStaticTexts();
-            renderPlayers();
-            renderBoard();
-            renderTokens();
-            updatePlayerUI();
-            updateLeaderboard();
-        }
-
-        function updateStaticTexts() {
-            document.getElementById('ui-board-desc').innerText = t('boardDesc');
-            document.getElementById('ui-lb-title').innerText = t('lbTitle');
-            document.getElementById('lang-text').innerText = currentLang === 'zh' ? 'EN / 繁中' : '繁中 / EN';
-            const btn = document.getElementById('roll-btn');
-            btn.innerText = `[${players[currentTurn].type}] ${t('roll')}`;
-        }
-
-        // 排行榜更新逻辑
-        function updateLeaderboard() {
-            let owned = { 0: [], 1: [], 2: [] };
-            for (let tileId in properties) {
-                owned[properties[tileId]].push(tileId);
-            }
+        order.forEach((tileId, index) => {
+            const tData = tilesData[tileId];
+            const tileDiv = document.createElement('div');
+            tileDiv.className = 'tile';
+            tileDiv.id = `tile-${tileId}`;
+            if([0, 10, 20, 30].includes(tileId)) tileDiv.classList.add('corner');
             
-            for (let i = 0; i < 3; i++) {
-                // 更新大数字
-                document.getElementById(`lb-count-${i}`).innerText = owned[i].length;
-                
-                // 更新地块列表
-                const listEl = document.getElementById(`lb-list-${i}`);
-                if (owned[i].length === 0) {
-                    listEl.innerHTML = `<span style="color:#777; font-size:10px;">${v('無', 'None')}</span>`;
-                } else {
-                    listEl.innerHTML = owned[i].map(id => {
-                        let name = v(tilesData[id].zh, tilesData[id].en);
-                        // 生成带阵营颜色的徽章
-                        return `<span class="lb-badge" style="color:${players[i].color}; border-color:${players[i].color}">${name}</span>`;
-                    }).join('');
+            // 阵营归属颜色
+            let titleHTML = tData[currentLang];
+            let borderStyle = "";
+            if (tData.type === 'prop') {
+                const roleColor = players.find(p=>p.id===tData.role).color;
+                titleHTML = `<span style="color:${roleColor}">[${tData.role}]</span><br>${titleHTML}`;
+                if (properties[tileId]) {
+                    const ownerColor = players.find(p=>p.id===properties[tileId]).color;
+                    borderStyle = `border-bottom: 4px solid ${ownerColor};`;
                 }
             }
-        }
 
-        function init() {
-            updateStaticTexts();
-            renderPlayers();
-            renderBoard();
-            renderTokens();
-            updatePlayerUI();
-            updateLeaderboard();
-            log(t('logInit'));
-        }
-
-        function renderPlayers() {
-            const container = document.getElementById('players-container');
-            container.innerHTML = players.map(p => `
-                <div class="player-card" id="pc-${p.id}" data-id="${p.id}">
-                    <div class="color-bar"></div>
-                    <div class="p-info" style="padding-left:18px;">
-                        <span class="p-name">${v(p.name_zh, p.name_en)}</span>
-                        <span class="p-money" id="money-${p.id}">$${p.money}</span>
-                    </div>
-                    <div class="p-target" style="padding-left:18px;">
-                        <span>${t('target')}: ${v(p.target_zh, p.target_en)}</span>
-                        <span style="font-family:'Press Start 2P'; font-size:10px; color:#aaa;">[1] [2]</span>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        function renderBoard() {
-            const board = document.getElementById('board');
-            board.querySelectorAll('.tile').forEach(e => e.remove());
-
-            tilesData.forEach((tl, i) => {
-                const el = document.createElement('div');
-                const isCorner = i % 10 === 0;
-                el.className = isCorner ? 'tile corner' : 'tile';
-                el.id = `tile-${i}`;
-                el.style.gridArea = getGridArea(i);
-
-                let nameStr = v(tl.zh, tl.en);
-                let nameHtml = `<div class="name">${nameStr}</div>`;
-                
-                if (['CIC', 'NGO', 'PUB'].includes(tl.type)) {
-                    const colorMap = { 'CIC': '#c2410c', 'NGO': '#15803d', 'PUB': '#1d4ed8' };
-                    nameHtml = `<div class="name" style="color:${colorMap[tl.type]}; text-shadow: 1px 1px 0px rgba(255,255,255,0.7);">${nameStr}</div>`;
-                }
-
-                el.innerHTML = `
-                    <div class="tokens-container" id="tc-${i}"></div>
-                    <div class="icon">${tl.icon}</div>
-                    ${nameHtml}
-                    <div class="desc">${tl.desc}</div>
-                    <div class="owner-bar" id="ob-${i}"></div>
-                `;
-                
-                if (properties[i] !== undefined) {
-                    const bar = el.querySelector('.owner-bar');
-                    bar.style.display = 'block';
-                    bar.style.backgroundColor = players[properties[i]].color;
-                }
-
-                board.appendChild(el);
-            });
-        }
-
-        function renderTokens() {
-            document.querySelectorAll('.tokens-container').forEach(c => c.innerHTML = '');
-            players.forEach(p => {
-                p.tokens.forEach((pos, index) => {
-                    const tokenEl = document.createElement('div');
-                    tokenEl.className = 'mc-token';
-                    tokenEl.style.backgroundColor = p.color;
-                    tokenEl.innerText = (index + 1).toString(); 
-                    document.getElementById(`tc-${pos}`).appendChild(tokenEl);
-                });
-            });
-        }
-
-        function rollDice() {
-            if (isAnimating || isWaitingForChance) return;
-            isAnimating = true;
-            document.getElementById('roll-btn').disabled = true;
-
-            rolledSteps = Math.floor(Math.random() * 6) + 1;
-            const diceDisplay = document.getElementById('dice-display');
+            tileDiv.style = borderStyle;
+            tileDiv.innerHTML = `
+                <div class="tokens-container" id="t-container-${tileId}"></div>
+                <div class="emoji-icon">${tData.icon}</div>
+                <div class="tile-name">${titleHTML}</div>
+                <div class="tile-price">${tData.type === 'prop' ? '$' + tData.price : tData.price}</div>
+            `;
             
-            let count = 0;
-            const rollInterval = setInterval(() => {
-                diceDisplay.innerText = Math.floor(Math.random() * 6) + 1;
-                count++;
-                if (count > 10) {
-                    clearInterval(rollInterval);
-                    diceDisplay.innerText = rolledSteps;
-                    diceDisplay.style.color = "#ffff00";
-                    setTimeout(showTokenChoiceModal, 600);
-                }
-            }, 60);
-        }
-
-        function getTileName(id) {
-            let tl = tilesData[id];
-            let n = v(tl.zh, tl.en);
-            if (tl.type === 'CIC') return `<span style="color:#c2410c; text-shadow: 1px 1px 0px rgba(255,255,255,0.7);">${n}</span>`;
-            if (tl.type === 'NGO') return `<span style="color:#15803d; text-shadow: 1px 1px 0px rgba(255,255,255,0.7);">${n}</span>`;
-            if (tl.type === 'PUB') return `<span style="color:#1d4ed8; text-shadow: 1px 1px 0px rgba(255,255,255,0.7);">${n}</span>`;
-            return n;
-        }
-
-        function showTokenChoiceModal() {
-            const player = players[currentTurn];
-            const pos1 = player.tokens[0];
-            const pos2 = player.tokens[1];
-            
-            const dest1 = (pos1 + rolledSteps) % 40;
-            const dest2 = (pos2 + rolledSteps) % 40;
-            
-            showModal(t('moveTitle'), 
-                `<strong style="font-size:32px; color:${player.color}; font-family:'Press Start 2P';">${rolledSteps}</strong><br><br>${t('moveDesc')}`, 
-                `<button class="mc-btn-general" style="border-color:${player.color}; color:#fff; line-height:1.8;" onclick="executeMove(0)">
-                    ${t('moveToken')} [1]<br>
-                    <span style="font-size:14px; color:#ddd;">${t('currentLoc')}: ${getTileName(pos1)}</span><br>
-                    <span style="font-size:16px; color:#ffff00;">${t('expectLoc')}: ${getTileName(dest1)}</span>
-                 </button>
-                 <button class="mc-btn-general" style="border-color:${player.color}; color:#fff; line-height:1.8;" onclick="executeMove(1)">
-                    ${t('moveToken')} [2]<br>
-                    <span style="font-size:14px; color:#ddd;">${t('currentLoc')}: ${getTileName(pos2)}</span><br>
-                    <span style="font-size:16px; color:#ffff00;">${t('expectLoc')}: ${getTileName(dest2)}</span>
-                 </button>`
-            );
-            document.getElementById('modal-btns').className = 'modal-btns'; 
-        }
-
-        function executeMove(tokenIndex) {
-            closeModal();
-            const player = players[currentTurn];
-            const oldPos = player.tokens[tokenIndex];
-            
-            player.tokens[tokenIndex] = (oldPos + rolledSteps) % 40;
-            const newPos = player.tokens[tokenIndex];
-            
-            if (newPos < oldPos && oldPos !== 0) {
-                player.money += 200;
-                log(`<strong>[${v(player.name_zh, player.name_en)}]</strong> [${tokenIndex+1}] ${t('logPassGo')}`);
-                updateMoneyUI(player.id);
-            }
-
-            log(`<strong>[${v(player.name_zh, player.name_en)}]</strong> [${tokenIndex+1}] ${t('logMove')} [${v(tilesData[newPos].zh, tilesData[newPos].en)}].`);
-            
-            renderTokens();
-            document.getElementById('dice-display').style.color = "#fff";
-            setTimeout(() => handleTileEffect(player, tilesData[newPos], tokenIndex), 500);
-        }
-
-        function handleTileEffect(player, tile, activeTokenIndex) {
-            document.getElementById('modal-btns').className = 'modal-btns row'; 
-            let tName = v(tile.zh, tile.en);
-
-            if (['CIC', 'NGO', 'PUB'].includes(tile.type)) {
-                if (properties[tile.id] === undefined) {
-                    if (tile.type === player.type) {
-                        showModal(`${t('buyTitle')} ${tName}`, `${t('buyDesc1')}${tile.price}${t('buyDesc2')}`, 
-                            `<button class="mc-btn-general mc-btn-primary" onclick="buyProperty(${player.id}, ${tile.id})">${t('buyBtn')}</button>
-                             <button class="mc-btn-general" onclick="nextTurn()">${t('skipBtn')}</button>`
-                        );
-                    } else {
-                        showModal(t('wrongCampTitle'), `<strong>${tName}</strong><br><br>${t('wrongCampDesc')}`,
-                            `<button class="mc-btn-general mc-btn-primary" onclick="nextTurn()">${t('okBtn')}</button>`
-                        );
-                    }
-                } else if (properties[tile.id] !== player.id) {
-                    const owner = players[properties[tile.id]];
-                    const rent = 100;
-                    player.money -= rent;
-                    owner.money += rent;
-                    updateMoneyUI(player.id);
-                    updateMoneyUI(owner.id);
-                    
-                    log(`<strong>[${v(player.name_zh, player.name_en)}]</strong> -> <strong>[${v(owner.name_zh, owner.name_en)}]</strong> ${t('logPay')} ${rent}.`);
-                    showModal(t('payTitle'), `<strong>[${v(owner.name_zh, owner.name_en)}]</strong>: ${tName}<br><br>${t('payDesc1')}${rent}.`,
-                        `<button class="mc-btn-general mc-btn-danger" onclick="nextTurn()">${t('payBtn')}</button>`
-                    );
-                } else {
-                    nextTurn();
-                }
-            } 
-            else if (tile.type === "QUIZ") {
-                document.getElementById('modal-btns').className = 'modal-btns'; // Force column layout for 4 options
-                const qIndex = Math.floor(Math.random() * quizPool.length);
-                const q = quizPool[qIndex];
-                const qText = v(q.q_zh, q.q_en);
-                let btnsHtml = "";
-                for(let i=0; i<4; i++) {
-                    const optText = v(q.options_zh[i], q.options_en[i]);
-                    const isCorrect = (i === q.ans);
-                    // Generate 4 distinct option buttons. They are aligned left to look like a standard multiple choice test.
-                    btnsHtml += `<button class="mc-btn-general" style="text-align:left; font-size:clamp(12px, 1.8vh, 16px); line-height:1.4; padding:10px 15px; font-family:'Microsoft JhengHei', sans-serif;" onclick="handleQuiz(${isCorrect}, ${qIndex})">${optText}</button>`;
-                }
-                showModal(t('quizTitle'), `<div style="text-align:left; font-weight:bold; color:#111; margin-bottom:15px; font-size:clamp(14px, 2vh, 18px);">${qText}</div>`, btnsHtml);
-            } 
-            else if (tile.type === "CHANCE") {
-                isWaitingForChance = true;
-                const cards = document.querySelectorAll('.chance-card');
-                cards.forEach(c => {
-                    c.classList.remove('disabled', 'picked');
-                    c.classList.add('glow');
-                });
-                
-                showModal(t('chanceWaitTitle'), t('chanceWaitDesc'),
-                    `<button class="mc-btn-general mc-btn-primary" onclick="closeModal()">${t('okBtn')}</button>`
-                );
-            }
-            else if (tile.type === "FOUNDATION") {
-                player.money += 400;
-                updateMoneyUI(player.id);
-                showModal(t('foundTitle'), t('foundDesc'),
-                    `<button class="mc-btn-general mc-btn-primary" onclick="nextTurn()">${t('okBtn')}</button>`
-                );
-            }
-            else if (tile.type === "JAIL") {
-                showModal(t('jailTitle'), t('jailDesc'),
-                    `<button class="mc-btn-general mc-btn-danger" onclick="nextTurn()">${t('jailBtn')}</button>`
-                );
-            }
-            else if (tile.type === "FREEDOM") {
-                let options = tilesData.map(t => {
-                    let name = v(t.zh, t.en);
-                    let prefix = "";
-                    let suffix = "";
-                    
-                    // 判断是否为可建设地块
-                    if (['CIC', 'NGO', 'PUB'].includes(t.type)) {
-                        prefix = `[${t.type}] `;
-                        // 判断是否已经被占领
-                        if (properties[t.id] !== undefined) {
-                            let owner = players[properties[t.id]];
-                            suffix = currentLang === 'zh' ? ` - 已被 ${owner.type} 建設` : ` - Built by ${owner.type}`;
-                        } else {
-                            suffix = currentLang === 'zh' ? ` - 可建設空地` : ` - Available Plot`;
-                        }
-                    } else {
-                        // 特殊功能格子
-                        prefix = currentLang === 'zh' ? `[特殊] ` : `[Special] `;
-                    }
-                    
-                    return `<option value="${t.id}">${t.id}. ${prefix}${name}${suffix}</option>`;
-                }).join('');
-
-                showModal(t('freeTitle'), 
-                    `${t('freeDesc')}<br><br><select id="freedomTarget">${options}</select>`,
-                    `<button class="mc-btn-general mc-btn-primary" onclick="executeFreedom(${activeTokenIndex})">${t('freeBtn')}</button>`
-                );
-                document.getElementById('modal-btns').className = 'modal-btns'; 
-            }
+            // Grid 布局分配
+            if (index < 11) { tileDiv.style.gridColumn = index + 1; tileDiv.style.gridRow = 1; }
+            else if (index >= order.length - 11) { tileDiv.style.gridColumn = 11 - (index - (order.length - 11)); tileDiv.style.gridRow = 11; }
             else {
-                nextTurn();
+                const midIndex = index - 11;
+                tileDiv.style.gridRow = Math.floor(midIndex / 2) + 2;
+                tileDiv.style.gridColumn = midIndex % 2 === 0 ? 1 : 11;
             }
-        }
+            wrapper.appendChild(tileDiv);
+        });
 
-        function pickCard(index) {
-            if (!isWaitingForChance) return; 
-            
-            isWaitingForChance = false;
-            const cards = document.querySelectorAll('.chance-card');
-            
-            cards.forEach((c, i) => {
-                c.classList.remove('glow');
-                if (i === index) {
-                    c.classList.add('picked');
-                } else {
-                    c.classList.add('disabled');
+        updateTokensUI();
+    }
+
+    function renderPlayers() {
+        const container = document.getElementById('players-container');
+        container.innerHTML = '';
+        players.forEach(p => {
+            const roleData = getT(`roles.${p.id}`);
+            container.innerHTML += `
+                <div class="player-card" style="border-left: 6px solid ${p.color}; opacity: ${p.id === players[currentPlayerIndex].id ? '1' : '0.5'}">
+                    <div class="player-info">
+                        <span class="p-name" style="color: ${p.color}">${roleData.name}</span>
+                        <span class="p-target">${roleData.target}</span>
+                    </div>
+                    <div class="p-money">$${p.money}</div>
+                </div>
+            `;
+        });
+    }
+
+    function updateTokensUI() {
+        document.querySelectorAll('.tokens-container').forEach(c => c.innerHTML = '');
+        players.forEach(p => {
+            p.tokens.forEach((pos, i) => {
+                const c = document.getElementById(`t-container-${pos}`);
+                if (c) {
+                    c.innerHTML += `<div class="token" style="background:${p.color}">${i+1}</div>`;
                 }
             });
-            
-            setTimeout(() => {
-                const deck = [
-                    { amount: 150, zh: "政府發放了環保特別津貼！<br>獲得資金 $150。", en: "Gov issues special eco-allowance!<br>Gain $150." },
-                    { amount: 50, zh: "市民捐贈綠色植物！<br>獲得資金 $50。", en: "Citizens donate green plants!<br>Gain $50." },
-                    { amount: 200, zh: "舉辦低碳展覽大獲成功！<br>獲得資金 $200。", en: "Low-carbon exhibition is a huge success!<br>Gain $200." },
-                    { amount: -50, zh: "生態設施需要額外維護。<br>扣除資金 $50。", en: "Facilities require extra maintenance.<br>Lose $50." },
-                    { amount: 100, zh: "獲得年度綠色設計獎！<br>獲得資金 $100。", en: "Won the annual Green Design Award!<br>Gain $100." }
-                ];
-                const card = deck[Math.floor(Math.random() * deck.length)];
-                
-                showModal(t('chanceTitle'), v(card.zh, card.en),
-                    `<button class="mc-btn-general mc-btn-primary" onclick="applyBonus(${card.amount}, true)">${t('okBtn')}</button>`
-                );
-            }, 600);
-        }
+        });
+    }
 
-        function executeFreedom(tokenIndex) {
-            const targetId = parseInt(document.getElementById('freedomTarget').value);
-            const player = players[currentTurn];
-            
-            player.tokens[tokenIndex] = targetId;
-            log(`<strong>[${v(player.name_zh, player.name_en)}]</strong> [${tokenIndex+1}] ${t('logFly')} <strong>${v(tilesData[targetId].zh, tilesData[targetId].en)}</strong>!`);
-            renderTokens();
-            
-            closeModal();
-            setTimeout(() => handleTileEffect(player, tilesData[targetId], tokenIndex), 500);
-        }
+    function updateLog(msg) {
+        const log = document.getElementById('sys-log');
+        log.innerHTML += `<div class="log-entry">${msg}</div>`;
+        log.scrollTop = log.scrollHeight;
+    }
 
-        function showModal(title, desc, btnsHtml) {
-            document.getElementById('modal-title').innerHTML = title;
-            document.getElementById('modal-desc').innerHTML = desc;
-            document.getElementById('modal-btns').innerHTML = btnsHtml;
-            document.getElementById('modal-overlay').style.display = 'flex';
-        }
-        function closeModal() { document.getElementById('modal-overlay').style.display = 'none'; }
+    function updateCenterUI() {
+        const p = players[currentPlayerIndex];
+        const btn = document.getElementById('roll-btn-text');
+        btn.innerHTML = `[${p.id}] ${getT('roll')}`;
+        btn.style.backgroundColor = p.color;
+    }
 
-        function buyProperty(playerId, tileId) {
-            const player = players[playerId];
-            const tile = tilesData[tileId];
-            if (player.money >= tile.price) {
-                player.money -= tile.price;
-                properties[tileId] = playerId;
-                
-                const bar = document.getElementById(`ob-${tileId}`);
-                bar.style.display = 'block';
-                bar.style.backgroundColor = player.color;
-                
-                updateMoneyUI(playerId);
-                updateLeaderboard(); // 更新排行榜
-                log(`<strong>[${v(player.name_zh, player.name_en)}]</strong> ${t('logBuy')} <strong>${v(tile.zh, tile.en)}</strong>.`);
+    function updateLeaderboard() {
+        const stats = { CIC: 0, NGO: 0, PUB: 0 };
+        const badgesHtml = [];
+        
+        Object.keys(properties).forEach(tileId => {
+            const owner = properties[tileId];
+            stats[owner]++;
+            const tData = tilesData[tileId];
+            const pColor = players.find(p=>p.id===owner).color;
+            badgesHtml.push(`<span class="badge" style="border-color:${pColor}">${tData[currentLang]}</span>`);
+        });
+
+        document.getElementById('lb-stats').innerHTML = 
+            `<span style="color:#ff6a00">[CIC] ${stats.CIC}</span>
+             <span style="color:#00c853">[NGO] ${stats.NGO}</span>
+             <span style="color:#2962ff">[PUB] ${stats.PUB}</span>`;
+             
+        document.getElementById('lb-badges').innerHTML = badgesHtml.join('');
+    }
+
+    // ================= 游戏交互逻辑 =================
+    function rollDice() {
+        if(isChanceActive) return;
+        pendingDiceResult = Math.floor(Math.random() * 6) + 1;
+        showTokenChoiceModal(pendingDiceResult);
+    }
+
+    function showTokenChoiceModal(steps) {
+        const p = players[currentPlayerIndex];
+        let html = `
+            <h3>${getT('modal.actionTitle')}</h3>
+            <p>${getT('modal.rolled')} <span style="font-family:var(--font-pixel); font-size:24px; color:${p.color};">${steps}</span> ${getT('modal.pts')}</p>
+            <p style="margin:10px 0;">${getT('modal.selectToken')}</p>
+        `;
+        
+        p.tokens.forEach((currentPos, i) => {
+            const nextPos = (currentPos + steps) % 40;
+            const currentTile = tilesData[currentPos];
+            const nextTile = tilesData[nextPos];
+            
+            // 预计到达的高亮名字
+            let nextNameHTML = nextTile[currentLang];
+            if(nextTile.type === 'prop') {
+                const rColor = players.find(pl=>pl.id===nextTile.role).color;
+                nextNameHTML = `<span style="color:${rColor}">[${nextTile.role}] ${nextNameHTML}</span>`;
             }
-            closeModal();
-            nextTurn();
+
+            html += `
+                <button class="modal-btn token-choice-btn" onclick="executeMove(${i})">
+                    ${getT('modal.moveToken')} [${i+1}]
+                    <div style="font-size:12px; margin-top:2px;">
+                        ${getT('modal.currentPos')} ${currentTile[currentLang]}<br>
+                        <span class="expected-dest">➔ ${getT('modal.expectedPos')} ${nextNameHTML}</span>
+                    </div>
+                </button>
+            `;
+        });
+        
+        showGenericModal("", html, null, true);
+    }
+
+    function executeMove(tokenIndex) {
+        closeGenericModal();
+        const p = players[currentPlayerIndex];
+        const oldPos = p.tokens[tokenIndex];
+        p.tokens[tokenIndex] = (oldPos + pendingDiceResult) % 40;
+        
+        if (p.tokens[tokenIndex] < oldPos) {
+            p.money += 200; // 经过起点
+            updateLog(`> [${p.id}] 經過起點，獲得 $200`);
         }
+        
+        renderBoard();
+        handleTileEffect(p, tokenIndex);
+    }
 
-        function handleQuiz(isCorrect, qIndex) {
-            const player = players[currentTurn];
-            const q = quizPool[qIndex];
-            const correctAnsText = v(q.options_zh[q.ans], q.options_en[q.ans]);
+    function nextTurn() {
+        currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
+        renderPlayers();
+        updateCenterUI();
+    }
 
-            if(isCorrect) {
-                player.money += 200; log(`<strong>[${v(player.name_zh, player.name_en)}]</strong> ${t('logQuizWin')}`);
+    function showGenericModal(title, desc, extraHtml = null, hideBtn = false) {
+        document.getElementById('gm-title').innerText = title;
+        document.getElementById('gm-desc').innerHTML = desc;
+        document.getElementById('gm-extra').innerHTML = extraHtml || "";
+        document.getElementById('gm-btn').style.display = hideBtn ? 'none' : 'block';
+        document.getElementById('generic-modal').style.display = 'flex';
+    }
+    function closeGenericModal() { document.getElementById('generic-modal').style.display = 'none'; }
+
+    // ================= 踩格事件分发 =================
+    function handleTileEffect(player, tokenIndex) {
+        const tile = tilesData[player.tokens[tokenIndex]];
+        updateLog(`> [${player.id}] 移動棋子[${tokenIndex+1}] 至 [${tile[currentLang]}].`);
+
+        if (tile.type === 'prop') {
+            const owner = properties[tile.id];
+            if (!owner) {
+                // 购买弹窗
+                const roleColor = players.find(p=>p.id===tile.role).color;
+                let html = `
+                    <button class="modal-btn" style="background:#2196F3" onclick="buyProperty(${tile.id})">${getT('modal.btnBuy')} ($${tile.price})</button>
+                    <button class="modal-btn" style="background:#999" onclick="closeGenericModal(); nextTurn();">${getT('modal.btnSkip')}</button>
+                `;
+                showGenericModal(getT('modal.buyTitle'), `<span style="color:${roleColor}">[${tile.role}]</span> ${tile[currentLang]}<br><br>${getT('modal.buyDesc')}`, html, true);
+            } else if (owner !== player.id) {
+                // 付租金
+                const rent = tile.price * 0.5;
+                player.money -= rent;
+                players.find(p => p.id === owner).money += rent;
+                updateLog(`> [${player.id}] 支付參觀費 $${rent} 給 [${owner}]`);
+                renderPlayers();
+                showGenericModal(getT('modal.rentTitle'), `支付 $${rent} 給 ${owner}`);
+                nextTurn();
             } else {
-                player.money -= 200; log(`<strong>[${v(player.name_zh, player.name_en)}]</strong> ${t('logQuizLose')}`);
+                nextTurn(); // 自己的地盘
             }
-            updateMoneyUI(player.id); 
-            
-            // 彈出正確答案提示視窗
-            let title = isCorrect ? v("✅ 答對了！", "✅ Correct!") : v("❌ 答錯了！", "❌ Incorrect!");
-            let desc = isCorrect ? 
-                v(`獲得獎勵 $200。<br><br>正確答案是：<br><strong style="color:#15803d; font-size: 18px;">${correctAnsText}</strong>`, 
-                  `You earned $200.<br><br>The correct answer is:<br><strong style="color:#15803d; font-size: 18px;">${correctAnsText}</strong>`) : 
-                v(`扣除資金 $200。<br><br>正確答案應該是：<br><strong style="color:#15803d; font-size: 18px;">${correctAnsText}</strong>`, 
-                  `You lost $200.<br><br>The correct answer should be:<br><strong style="color:#15803d; font-size: 18px;">${correctAnsText}</strong>`);
-                  
-            showModal(title, desc, `<button class="mc-btn-general mc-btn-primary" onclick="closeModal(); nextTurn();">${t('okBtn')}</button>`);
-            document.getElementById('modal-btns').className = 'modal-btns row';
+        } 
+        else if (tile.type === 'chance') {
+            updateLog(`> [${player.id}] 觸發機會，請點擊中央卡牌！`);
+            isChanceActive = true;
+            document.querySelectorAll('.chance-card').forEach(c => c.classList.add('active'));
         }
-
-        function applyBonus(amount, isFromCard = false) {
-            const player = players[currentTurn];
-            player.money += amount; updateMoneyUI(player.id);
-            let sign = amount > 0 ? "+" : "";
-            log(`<strong>[${v(player.name_zh, player.name_en)}]</strong> ${t('logBonus')}${sign}${amount}.`);
-            
-            if(isFromCard) {
-                const cards = document.querySelectorAll('.chance-card');
-                cards.forEach(c => {
-                    c.classList.remove('picked');
-                    c.classList.add('disabled');
-                });
-            }
-            
-            closeModal(); nextTurn();
+        else if (tile.type === 'quiz') {
+            handleQuiz(player);
         }
-
-        function nextTurn() {
-            closeModal();
-            currentTurn = (currentTurn + 1) % players.length;
-            updatePlayerUI();
+        else if (tile.type === 'teleport') {
+            let opts = tilesData.map(t => {
+                let prefix = "";
+                let suffix = "";
+                if(t.type === 'prop'){
+                    prefix = `[${t.role}] `;
+                    suffix = properties[t.id] ? ` - (${getT('status.builtBy').replace('{role}', properties[t.id])})` : ` - (${getT('status.available')})`;
+                } else if(t.type === 'start' || t.type === 'teleport') {
+                    prefix = `[★] `;
+                }
+                return `<option value="${t.id}">${t.id}: ${prefix}${t[currentLang]}${suffix}</option>`;
+            }).join('');
             
-            document.getElementById('roll-btn').disabled = false;
-            document.getElementById('dice-display').innerText = "?";
-            isAnimating = false;
+            let html = `
+                <select id="teleport-sel" style="width:100%; padding:10px; margin:10px 0; font-size:16px;">${opts}</select>
+                <button class="modal-btn" onclick="executeTeleport(${tokenIndex})">${getT('btnTeleport')}</button>
+            `;
+            showGenericModal(getT('modal.freeTitle'), getT('modal.freeDesc'), html, true);
         }
-
-        function updatePlayerUI() {
-            document.querySelectorAll('.player-card').forEach(el => el.classList.remove('active'));
-            document.getElementById(`pc-${currentTurn}`).classList.add('active');
-            
-            const btn = document.getElementById('roll-btn');
-            btn.style.backgroundColor = players[currentTurn].color; 
-            btn.innerText = `[${players[currentTurn].type}] ${t('roll')}`;
+        else {
+            nextTurn(); // start, corner, pause 等暂时无副作用
         }
+    }
 
-        function updateMoneyUI(id) { document.getElementById(`money-${id}`).innerText = `$${players[id].money}`; }
-
-        function log(msg) {
-            const container = document.getElementById('log-container');
-            const el = document.createElement('div');
-            el.className = 'log-item';
-            el.innerHTML = `> ${msg}`;
-            container.appendChild(el);
-            container.scrollTop = container.scrollHeight; 
+    function buyProperty(tileId) {
+        const player = players[currentPlayerIndex];
+        const tile = tilesData[tileId];
+        if (player.money >= tile.price) {
+            player.money -= tile.price;
+            properties[tileId] = player.id;
+            updateLog(`> [${player.id}] 投資建設了 ${tile[currentLang]}`);
+            renderPlayers();
+            renderBoard();
+            updateLeaderboard();
+        } else {
+            updateLog(`> [${player.id}] 資金不足。`);
         }
+        closeGenericModal();
+        nextTurn();
+    }
 
-        window.onload = init;
-    </script>
+    // ================= 机会卡系统 =================
+    function drawChanceCard(element) {
+        if(!isChanceActive) return;
+        isChanceActive = false;
+        document.querySelectorAll('.chance-card').forEach(c => c.classList.remove('active'));
+        
+        const player = players[currentPlayerIndex];
+        const events = [
+            { desc: "獲得綠色基金贊助，+$150", amt: 150 },
+            { desc: "舉辦生態講座，門票收入 +$100", amt: 100 },
+            { desc: "維護設施，支付 -$50", amt: -50 },
+            { desc: "遭遇惡劣天氣，修繕花費 -$100", amt: -100 }
+        ];
+        const ev = events[Math.floor(Math.random() * events.length)];
+        
+        player.money += ev.amt;
+        updateLog(`> 機會卡: ${ev.desc}`);
+        renderPlayers();
+        showGenericModal(getT('modal.chanceTitle'), ev.desc);
+        nextTurn();
+    }
+
+    // ================= 测验系统 (带答案反馈) =================
+    function handleQuiz(player) {
+        const qIndex = Math.floor(Math.random() * quizDB.length);
+        const qData = quizDB[qIndex][currentLang];
+        
+        let html = `<div style="display:flex; flex-direction:column; gap:8px;">`;
+        qData.opts.forEach((opt, idx) => {
+            html += `<button class="modal-btn quiz-opt" onclick="evalQuiz(${idx}, ${qIndex})">${String.fromCharCode(65+idx)}. ${opt}</button>`;
+        });
+        html += `</div><div id="quiz-feedback" class="quiz-feedback"></div>`;
+        
+        showGenericModal(getT('modal.quizTitle'), `<div style="text-align:left; margin-bottom:15px; font-weight:bold;">Q: ${qData.q}</div>`, html, true);
+    }
+
+    function evalQuiz(selectedIdx, qIndex) {
+        const player = players[currentPlayerIndex];
+        const isCorrect = selectedIdx === quizDB[qIndex][currentLang].ans;
+        const correctText = quizDB[qIndex][currentLang].opts[quizDB[qIndex][currentLang].ans];
+        
+        if(isCorrect) {
+            player.money += 200;
+            updateLog(`> [${player.id}] 答對生態題，獲得 $200`);
+        } else {
+            player.money -= 50;
+            updateLog(`> [${player.id}] 答錯了，扣除 $50`);
+        }
+        renderPlayers();
+        
+        // 隐藏所有选项按钮
+        document.querySelectorAll('.quiz-opt').forEach(b => b.style.display = 'none');
+        
+        // 显示结果和正确答案
+        const feedback = document.getElementById('quiz-feedback');
+        feedback.style.display = 'block';
+        feedback.style.borderColor = isCorrect ? '#3c763d' : '#a94442';
+        feedback.style.color = isCorrect ? '#3c763d' : '#a94442';
+        feedback.style.background = isCorrect ? '#dff0d8' : '#f2dede';
+        feedback.innerHTML = `
+            <div style="font-size:20px; margin-bottom:10px;">${isCorrect ? '✅ 答對了！' : '❌ 答錯了！'}</div>
+            <div style="font-size:14px; color:#333;">正確答案: <br><b>${correctText}</b></div>
+        `;
+        
+        // 显示确认按钮，点击后关闭并结束回合
+        document.getElementById('gm-btn').style.display = 'block';
+        document.getElementById('gm-btn').onclick = () => {
+            closeGenericModal();
+            nextTurn();
+        };
+    }
+
+    // ================= 传送功能 =================
+    function executeTeleport(tokenIndex) {
+        const target = parseInt(document.getElementById('teleport-sel').value);
+        closeGenericModal();
+        const p = players[currentPlayerIndex];
+        p.tokens[tokenIndex] = target;
+        renderBoard();
+        handleTileEffect(p, tokenIndex);
+    }
+
+</script>
 </body>
 </html>
